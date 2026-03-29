@@ -4,7 +4,7 @@ import { CATEGORIAS_GASTO, CATEGORIA_CORES } from '@/lib/constants';
 import { formatCurrency } from '@/lib/formatters';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, TrendingDown, AlertTriangle, Lightbulb, Calendar, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, Lightbulb, Calendar, Target, Zap } from 'lucide-react';
 
 export default function Projecao() {
   const { data: transacoes, isLoading: loadingTx } = useTransacoesMesAtual();
@@ -25,7 +25,6 @@ export default function Projecao() {
     const saldoProjetado = receitas - gastoProjetado;
     const gastoDiarioPermitido = daysRemaining > 0 ? Math.max(0, (receitas - gastos) / daysRemaining) : 0;
 
-    // Categorias com risco de estouro
     const gastosPorCategoria: Record<string, number> = {};
     transacoes.filter(t => t.tipo === 'gasto').forEach(t => {
       gastosPorCategoria[t.categoria] = (gastosPorCategoria[t.categoria] || 0) + Number(t.valor);
@@ -42,47 +41,27 @@ export default function Projecao() {
       })
       .filter(Boolean) as { categoria: string; gasto: number; limite: number; projetado: number; risco: number }[];
 
-    // Dica contextual
     let dica: { tipo: 'positivo' | 'apertado' | 'estourado'; texto: string };
     const percentualComprometido = receitas > 0 ? (gastoProjetado / receitas) * 100 : 0;
 
     if (percentualComprometido <= 70) {
-      dica = {
-        tipo: 'positivo',
-        texto: 'Você está no caminho certo! Seus gastos estão controlados e há margem confortável até o fim do mês.',
-      };
+      dica = { tipo: 'positivo', texto: 'Você está no caminho certo! Seus gastos estão controlados e há margem confortável até o fim do mês.' };
     } else if (percentualComprometido <= 100) {
-      dica = {
-        tipo: 'apertado',
-        texto: `Atenção: sua projeção indica que ${percentualComprometido.toFixed(0)}% da receita será comprometida. Tente reduzir gastos nos próximos dias.`,
-      };
+      dica = { tipo: 'apertado', texto: `Atenção: projeção de ${percentualComprometido.toFixed(0)}% da receita comprometida. Reduza gastos nos próximos dias.` };
     } else {
-      dica = {
-        tipo: 'estourado',
-        texto: 'Alerta: seus gastos projetados ultrapassam sua receita. Revise urgentemente suas despesas para evitar endividamento.',
-      };
+      dica = { tipo: 'estourado', texto: 'Alerta: gastos projetados ultrapassam sua receita. Revise urgentemente suas despesas.' };
     }
 
-    return {
-      gastos,
-      receitas,
-      gastoProjetado,
-      saldoProjetado,
-      gastoDiarioPermitido,
-      categoriasRisco,
-      dica,
-      daysPassed,
-      daysInMonth,
-      daysRemaining,
-    };
+    return { gastos, receitas, gastoProjetado, saldoProjetado, gastoDiarioPermitido, categoriasRisco, dica, daysPassed, daysInMonth, daysRemaining, percentualComprometido };
   }, [transacoes, limites]);
 
   if (loadingTx || loadingLim) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-display font-bold text-foreground">Projeção</h1>
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        <Skeleton className="h-8 w-40 rounded-lg" />
+        <Skeleton className="h-24 rounded-xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
       </div>
     );
@@ -90,105 +69,135 @@ export default function Projecao() {
 
   if (!projecao) return null;
 
-  const dicaColors = {
-    positivo: 'border-success/30 bg-success/5',
-    apertado: 'border-warning/30 bg-warning/5',
-    estourado: 'border-destructive/30 bg-destructive/5',
+  const dicaConfig = {
+    positivo: { border: 'border-success/30 bg-success/5', icon: TrendingUp, color: 'text-success', label: 'Tudo certo!' },
+    apertado: { border: 'border-warning/30 bg-warning/5', icon: AlertTriangle, color: 'text-warning', label: 'Atenção' },
+    estourado: { border: 'border-destructive/30 bg-destructive/5', icon: TrendingDown, color: 'text-destructive', label: 'Alerta' },
   };
 
-  const dicaIcons = {
-    positivo: TrendingUp,
-    apertado: AlertTriangle,
-    estourado: TrendingDown,
-  };
+  const dc = dicaConfig[projecao.dica.tipo];
+  const DicaIcon = dc.icon;
 
-  const DicaIcon = dicaIcons[projecao.dica.tipo];
+  // Progress bar for month
+  const monthProgress = (projecao.daysPassed / projecao.daysInMonth) * 100;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-display font-bold text-foreground">Projeção</h1>
-      <p className="text-sm text-muted-foreground">
-        Baseado nos {projecao.daysPassed} dias já decorridos de {projecao.daysInMonth} neste mês.
-      </p>
+      <div>
+        <h1 className="text-2xl font-display font-bold text-foreground">Projeção</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Dia {projecao.daysPassed} de {projecao.daysInMonth} · {projecao.daysRemaining} dias restantes
+        </p>
+      </div>
 
-      {/* Dica contextual */}
-      <Card className={`p-4 border ${dicaColors[projecao.dica.tipo]}`}>
+      {/* Month progress */}
+      <div className="relative h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div
+          className="absolute left-0 top-0 h-full rounded-full bg-primary/60 transition-all"
+          style={{ width: `${monthProgress}%` }}
+        />
+      </div>
+
+      {/* Insight card */}
+      <Card className={`p-4 border ${dc.border}`}>
         <div className="flex gap-3">
-          <DicaIcon className={`w-5 h-5 shrink-0 mt-0.5 ${
-            projecao.dica.tipo === 'positivo' ? 'text-success' :
-            projecao.dica.tipo === 'apertado' ? 'text-warning' : 'text-destructive'
-          }`} />
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+            projecao.dica.tipo === 'positivo' ? 'bg-success/10' :
+            projecao.dica.tipo === 'apertado' ? 'bg-warning/10' : 'bg-destructive/10'
+          }`}>
+            <DicaIcon className={`w-4 h-4 ${dc.color}`} />
+          </div>
           <div>
-            <p className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" /> Dica
+            <p className={`text-sm font-semibold ${dc.color} flex items-center gap-1.5`}>
+              <Lightbulb className="w-3.5 h-3.5" /> {dc.label}
             </p>
-            <p className="text-sm text-muted-foreground mt-1">{projecao.dica.texto}</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{projecao.dica.texto}</p>
           </div>
         </div>
       </Card>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-4 bg-card border-border animate-slide-up">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingDown className="w-4 h-4 text-destructive" />
-            <span className="text-sm text-muted-foreground">Gasto projetado</span>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <TrendingDown className="w-4 h-4 text-destructive" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Gasto projetado</span>
           </div>
-          <p className="text-xl font-display font-bold text-destructive">
+          <p className="text-xl font-display font-bold text-destructive tracking-tight">
             {formatCurrency(projecao.gastoProjetado)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Gasto atual: {formatCurrency(projecao.gastos)}
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Atual: {formatCurrency(projecao.gastos)}
           </p>
         </Card>
 
         <Card className="p-4 bg-card border-border animate-slide-up">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-4 h-4 text-foreground" />
-            <span className="text-sm text-muted-foreground">Saldo projetado</span>
+          <div className="flex items-center gap-2 mb-3">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${projecao.saldoProjetado >= 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
+              <Target className={`w-4 h-4 ${projecao.saldoProjetado >= 0 ? 'text-success' : 'text-destructive'}`} />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Saldo projetado</span>
           </div>
-          <p className={`text-xl font-display font-bold ${projecao.saldoProjetado >= 0 ? 'text-success' : 'text-destructive'}`}>
+          <p className={`text-xl font-display font-bold tracking-tight ${projecao.saldoProjetado >= 0 ? 'text-success' : 'text-destructive'}`}>
             {formatCurrency(projecao.saldoProjetado)}
           </p>
         </Card>
 
         <Card className="p-4 bg-card border-border animate-slide-up">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Gasto diário permitido</span>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Diário permitido</span>
           </div>
-          <p className="text-xl font-display font-bold text-primary">
+          <p className="text-xl font-display font-bold text-primary tracking-tight">
             {formatCurrency(projecao.gastoDiarioPermitido)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {projecao.daysRemaining} dias restantes
+          <p className="text-[11px] text-muted-foreground mt-1">
+            por dia nos próximos {projecao.daysRemaining}d
           </p>
         </Card>
       </div>
 
-      {/* Categorias com risco */}
+      {/* Risk categories */}
       {projecao.categoriasRisco.length > 0 && (
         <div>
-          <h2 className="text-lg font-display font-semibold text-foreground mb-3 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-warning" />
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
             Categorias com risco de estouro
           </h2>
-          <div className="space-y-3">
-            {projecao.categoriasRisco.map(c => (
-              <Card key={c.categoria} className="p-4 bg-card border-border border-l-2 animate-slide-up" style={{ borderLeftColor: CATEGORIA_CORES[c.categoria] }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{c.categoria}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Gasto atual: {formatCurrency(c.gasto)} · Projetado: {formatCurrency(c.projetado)} · Limite: {formatCurrency(c.limite)}
-                    </p>
+          <div className="space-y-2">
+            {projecao.categoriasRisco.map(c => {
+              const percent = Math.min((c.gasto / c.limite) * 100, 100);
+              return (
+                <Card
+                  key={c.categoria}
+                  className="p-4 bg-card border-border animate-slide-up"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CATEGORIA_CORES[c.categoria] }} />
+                      <span className="text-sm font-medium text-foreground">{c.categoria}</span>
+                    </div>
+                    <span className={`text-sm font-display font-bold ${c.risco > 1 ? 'text-destructive' : 'text-warning'}`}>
+                      {(c.risco * 100).toFixed(0)}%
+                    </span>
                   </div>
-                  <span className={`text-sm font-display font-bold ${c.risco > 1 ? 'text-destructive' : 'text-warning'}`}>
-                    {(c.risco * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </Card>
-            ))}
+                  <div className="relative h-2 rounded-full bg-secondary overflow-hidden mb-2">
+                    <div
+                      className={`absolute left-0 top-0 h-full rounded-full transition-all ${c.risco > 1 ? 'bg-destructive' : 'bg-warning'}`}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>Gasto: {formatCurrency(c.gasto)}</span>
+                    <span>Limite: {formatCurrency(c.limite)}</span>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}

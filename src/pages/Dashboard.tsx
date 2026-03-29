@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useTransacoes } from '@/hooks/useFinancas';
-import { formatCurrency, formatMonthYear } from '@/lib/formatters';
+import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +12,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Wallet, Percent, CalendarRange } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FaturaInfo } from '@/components/FaturaInfo';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,28 +21,33 @@ import type { Transacao } from '@/hooks/useFinancas';
 type ViewMode = 'range' | 'month';
 type RangeOption = '3m' | '6m' | '1y';
 
-function MetricCard({ title, value, icon: Icon, variant }: {
+function MetricCard({ title, value, icon: Icon, variant, subtitle }: {
   title: string;
   value: string;
   icon: any;
   variant: 'success' | 'destructive' | 'default' | 'warning';
+  subtitle?: string;
 }) {
-  const colorMap = {
-    success: 'text-success',
-    destructive: 'text-destructive',
-    default: 'text-foreground',
-    warning: 'text-warning',
+  const styles = {
+    success: { text: 'text-success', bg: 'bg-success/10', icon: 'text-success' },
+    destructive: { text: 'text-destructive', bg: 'bg-destructive/10', icon: 'text-destructive' },
+    default: { text: 'text-foreground', bg: 'bg-muted', icon: 'text-muted-foreground' },
+    warning: { text: 'text-warning', bg: 'bg-warning/10', icon: 'text-warning' },
   };
+  const s = styles[variant];
 
   return (
-    <Card className="p-4 bg-card border-border animate-slide-up">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-muted-foreground">{title}</span>
-        <Icon className={`w-4 h-4 ${colorMap[variant]}`} />
+    <Card className="p-4 bg-card border-border animate-slide-up hover:border-border/80 transition-colors">
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
+        <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 ${s.icon}`} />
+        </div>
       </div>
-      <p className={`text-lg md:text-xl font-display font-bold ${colorMap[variant]}`}>
+      <p className={`text-xl md:text-2xl font-display font-bold ${s.text} tracking-tight`}>
         {value}
       </p>
+      {subtitle && <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>}
     </Card>
   );
 }
@@ -51,10 +55,11 @@ function MetricCard({ title, value, icon: Icon, variant }: {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload) return null;
   return (
-    <div className="bg-popover border border-border rounded-lg p-3 shadow-xl">
-      <p className="text-xs font-medium text-foreground mb-1">{label}</p>
+    <div className="bg-popover border border-border rounded-xl p-3 shadow-2xl shadow-black/20">
+      <p className="text-xs font-semibold text-foreground mb-1.5">{label}</p>
       {payload.map((entry: any, i: number) => (
-        <p key={i} className="text-xs" style={{ color: entry.color }}>
+        <p key={i} className="text-xs flex items-center gap-1.5" style={{ color: entry.color }}>
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
           {entry.name}: {formatCurrency(entry.value)}
         </p>
       ))}
@@ -62,22 +67,40 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+const RENDERIZED_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) => {
+  if (percent < 0.05) return null;
+  const RADIAN = Math.PI / 180;
+  const radius = outerRadius + 24;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="hsl(210 25% 85%)"
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={500}
+    >
+      {name} {(percent * 100).toFixed(0)}%
+    </text>
+  );
+};
+
 function useTransacoesRange(months: number) {
   const { user } = useAuth();
-
   return useQuery({
     queryKey: ['transacoes-range', user?.id, months],
     queryFn: async () => {
       const now = new Date();
       const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
       const start = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
-
       const { data, error } = await supabase
         .from('transacoes')
         .select('*')
         .gte('data', start)
         .order('data', { ascending: true });
-
       if (error) throw error;
       return data as Transacao[];
     },
@@ -89,7 +112,6 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [rangeOption, setRangeOption] = useState<RangeOption>('6m');
 
-  // Month-by-month controls
   const now = new Date();
   const [selectedMes, setSelectedMes] = useState(now.getMonth());
   const [selectedAno, setSelectedAno] = useState(now.getFullYear());
@@ -101,19 +123,24 @@ export default function Dashboard() {
   const activeData = viewMode === 'range' ? rangeData : monthData;
   const isLoading = viewMode === 'range' ? loadingRange : loadingMonth;
 
-  // Metrics for the current view
+  const navigateMonth = (dir: number) => {
+    let m = selectedMes + dir;
+    let y = selectedAno;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    setSelectedMes(m);
+    setSelectedAno(y);
+  };
+
   const metrics = useMemo(() => {
     if (!activeData) return { receitas: 0, gastos: 0, saldo: 0, percentual: 0 };
-
     let data: Transacao[];
     if (viewMode === 'month') {
       data = activeData;
     } else {
-      // For range mode, show current month metrics
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       data = activeData.filter(t => t.data.startsWith(thisMonth));
     }
-
     const receitas = data.filter(t => t.tipo === 'receita').reduce((s, t) => s + Number(t.valor), 0);
     const gastos = data.filter(t => t.tipo === 'gasto').reduce((s, t) => s + Number(t.valor), 0);
     return {
@@ -122,28 +149,19 @@ export default function Dashboard() {
       saldo: receitas - gastos,
       percentual: receitas > 0 ? (gastos / receitas) * 100 : 0,
     };
-  }, [activeData, viewMode, selectedMes, selectedAno]);
+  }, [activeData, viewMode]);
 
-  // Bar chart data
   const barData = useMemo(() => {
     if (!activeData) return [];
-
     if (viewMode === 'month') {
-      // Group by week for single month view
       const weeks: Record<string, { receitas: number; gastos: number; label: string }> = {};
       const daysInMonth = new Date(selectedAno, selectedMes + 1, 0).getDate();
-
       for (let w = 0; w < 5; w++) {
         const startDay = w * 7 + 1;
         const endDay = Math.min(startDay + 6, daysInMonth);
         if (startDay > daysInMonth) break;
-        weeks[`w${w}`] = {
-          receitas: 0,
-          gastos: 0,
-          label: `${startDay}-${endDay}`,
-        };
+        weeks[`w${w}`] = { receitas: 0, gastos: 0, label: `${startDay}-${endDay}` };
       }
-
       activeData.forEach(t => {
         const day = new Date(t.data + 'T12:00:00').getDate();
         const weekIdx = Math.min(Math.floor((day - 1) / 7), 4);
@@ -153,24 +171,15 @@ export default function Dashboard() {
           else weeks[key].gastos += Number(t.valor);
         }
       });
-
       return Object.values(weeks);
     }
-
-    // Range mode - group by month
     const months: Record<string, { receitas: number; gastos: number; label: string }> = {};
-
     for (let i = rangeMonths - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       const monthName = format(d, 'MMM', { locale: ptBR });
-      months[key] = {
-        receitas: 0,
-        gastos: 0,
-        label: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-      };
+      months[key] = { receitas: 0, gastos: 0, label: monthName.charAt(0).toUpperCase() + monthName.slice(1) };
     }
-
     activeData.forEach(t => {
       const d = new Date(t.data + 'T12:00:00');
       const key = `${d.getFullYear()}-${d.getMonth()}`;
@@ -179,14 +188,11 @@ export default function Dashboard() {
         else months[key].gastos += Number(t.valor);
       }
     });
-
     return Object.values(months);
   }, [activeData, viewMode, rangeMonths, selectedMes, selectedAno]);
 
-  // Donut data
   const donutData = useMemo(() => {
     if (!activeData) return [];
-
     let data: Transacao[];
     if (viewMode === 'month') {
       data = activeData;
@@ -194,7 +200,6 @@ export default function Dashboard() {
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       data = activeData.filter(t => t.data.startsWith(thisMonth));
     }
-
     const cats: Record<string, number> = {};
     data.filter(t => t.tipo === 'gasto').forEach(t => {
       cats[t.categoria] = (cats[t.categoria] || 0) + Number(t.valor);
@@ -214,60 +219,69 @@ export default function Dashboard() {
     return options;
   }, [selectedAno]);
 
-  // Get the label for the metrics section
   const metricsLabel = viewMode === 'month'
     ? monthOptions.find(m => m.value === selectedMes)?.label + ` ${selectedAno}`
     : 'Mês atual';
 
   if (isLoading) {
     return (
-      <div className="space-y-5">
-        <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48 rounded-lg" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
-        <Skeleton className="h-64 rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header with controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+            <CalendarRange className="w-3 h-3" />
+            {metricsLabel}
+          </p>
+        </div>
 
-        {/* View mode controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex bg-secondary rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('range')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                viewMode === 'range'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Histórico
-            </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* View mode toggle */}
+          <div className="flex bg-secondary rounded-lg p-1">
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'month'
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Mês a mês
             </button>
+            <button
+              onClick={() => setViewMode('range')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                viewMode === 'range'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Histórico
+            </button>
           </div>
 
           {viewMode === 'range' && (
-            <div className="flex bg-secondary rounded-lg p-0.5">
+            <div className="flex bg-secondary rounded-lg p-1">
               {(['3m', '6m', '1y'] as RangeOption[]).map(opt => (
                 <button
                   key={opt}
                   onClick={() => setRangeOption(opt)}
-                  className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                     rangeOption === opt
                       ? 'bg-accent text-foreground'
                       : 'text-muted-foreground hover:text-foreground'
@@ -280,9 +294,15 @@ export default function Dashboard() {
           )}
 
           {viewMode === 'month' && (
-            <div className="flex gap-1.5">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigateMonth(-1)}
+                className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
               <Select value={String(selectedMes)} onValueChange={(v) => setSelectedMes(Number(v))}>
-                <SelectTrigger className="w-32 bg-secondary border-border h-8 text-xs">
+                <SelectTrigger className="w-28 bg-secondary border-border h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -301,23 +321,45 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
+              <button
+                onClick={() => navigateMonth(1)}
+                className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Metrics */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-2.5 flex items-center gap-1.5">
-          <CalendarRange className="w-3 h-3" />
-          {metricsLabel}
-        </p>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricCard title="Receitas" value={formatCurrency(metrics.receitas)} icon={ArrowUpRight} variant="success" />
-          <MetricCard title="Gastos" value={formatCurrency(metrics.gastos)} icon={ArrowDownRight} variant="destructive" />
-          <MetricCard title="Saldo" value={formatCurrency(metrics.saldo)} icon={Wallet} variant={metrics.saldo >= 0 ? 'success' : 'destructive'} />
-          <MetricCard title="Comprometido" value={`${metrics.percentual.toFixed(1)}%`} icon={Percent} variant={metrics.percentual > 90 ? 'destructive' : metrics.percentual > 70 ? 'warning' : 'default'} />
-        </div>
+      {/* Metric cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <MetricCard
+          title="Receitas"
+          value={formatCurrency(metrics.receitas)}
+          icon={ArrowUpRight}
+          variant="success"
+        />
+        <MetricCard
+          title="Gastos"
+          value={formatCurrency(metrics.gastos)}
+          icon={ArrowDownRight}
+          variant="destructive"
+        />
+        <MetricCard
+          title="Saldo"
+          value={formatCurrency(metrics.saldo)}
+          icon={Wallet}
+          variant={metrics.saldo >= 0 ? 'success' : 'destructive'}
+          subtitle={metrics.saldo >= 0 ? 'Dentro do orçamento' : 'Acima do orçamento'}
+        />
+        <MetricCard
+          title="Comprometido"
+          value={`${metrics.percentual.toFixed(1)}%`}
+          icon={TrendingUp}
+          variant={metrics.percentual > 90 ? 'destructive' : metrics.percentual > 70 ? 'warning' : 'default'}
+          subtitle={`da receita usada`}
+        />
       </div>
 
       {/* Fatura info */}
@@ -325,44 +367,49 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4 bg-card border-border">
-          <h3 className="text-xs font-medium text-muted-foreground mb-4">
-            {viewMode === 'month' ? 'Receitas vs Gastos (por semana)' : `Receitas vs Gastos (${rangeOption === '3m' ? '3 meses' : rangeOption === '6m' ? '6 meses' : '1 ano'})`}
+        <Card className="p-5 bg-card border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-1">
+            {viewMode === 'month' ? 'Receitas vs Gastos' : 'Evolução'}
           </h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 22%)" />
-              <XAxis dataKey="label" tick={{ fill: 'hsl(215 12% 70%)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'hsl(215 12% 70%)', fontSize: 11 }} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
-              <Bar dataKey="receitas" name="Receitas" fill="hsl(160 64% 40%)" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="gastos" name="Gastos" fill="hsl(0 72% 51%)" radius={[3, 3, 0, 0]} />
+          <p className="text-[11px] text-muted-foreground mb-4">
+            {viewMode === 'month' ? 'Por semana' : `Últimos ${rangeOption === '3m' ? '3 meses' : rangeOption === '6m' ? '6 meses' : '12 meses'}`}
+          </p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={barData} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(225 12% 20%)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: 'hsl(215 15% 68%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'hsl(215 15% 68%)', fontSize: 11 }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(225 12% 14%)' }} />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+              <Bar dataKey="receitas" name="Receitas" fill="hsl(160 64% 44%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="gastos" name="Gastos" fill="hsl(0 72% 56%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-4 bg-card border-border">
-          <h3 className="text-xs font-medium text-muted-foreground mb-4">
-            Gastos por categoria {viewMode === 'month' ? '' : '(mês atual)'}
-          </h3>
+        <Card className="p-5 bg-card border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-1">Gastos por categoria</h3>
+          <p className="text-[11px] text-muted-foreground mb-4">
+            {viewMode === 'month' ? monthOptions.find(m => m.value === selectedMes)?.label : 'Mês atual'}
+          </p>
           {donutData.length === 0 ? (
-            <div className="flex items-center justify-center h-[240px] text-muted-foreground text-sm">
-              Sem gastos neste período
+            <div className="flex flex-col items-center justify-center h-[260px] text-muted-foreground">
+              <Wallet className="w-10 h-10 mb-2 opacity-30" />
+              <p className="text-sm">Sem gastos neste período</p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={donutData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={2}
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={3}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={{ stroke: 'hsl(215 12% 50%)' }}
+                  label={RENDERIZED_LABEL}
+                  labelLine={{ stroke: 'hsl(215 12% 35%)', strokeWidth: 1 }}
                 >
                   {donutData.map((entry) => (
                     <Cell key={entry.name} fill={CATEGORIA_CORES[entry.name] || '#6B7280'} />
@@ -371,15 +418,12 @@ export default function Dashboard() {
                 <Tooltip
                   formatter={(value: number) => formatCurrency(value)}
                   contentStyle={{
-                    backgroundColor: 'hsl(220 18% 14%)',
-                    border: '1px solid hsl(220 14% 22%)',
-                    borderRadius: '8px',
-                    color: 'hsl(210 20% 95%)',
+                    backgroundColor: 'hsl(225 16% 14%)',
+                    border: '1px solid hsl(225 12% 22%)',
+                    borderRadius: '10px',
+                    color: 'hsl(210 25% 95%)',
                     fontSize: '12px',
                   }}
-                />
-                <Legend
-                  formatter={(value) => <span className="text-xs" style={{ color: 'hsl(215 12% 75%)' }}>{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>

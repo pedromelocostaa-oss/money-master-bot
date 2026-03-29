@@ -1,9 +1,9 @@
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Layers, TrendingUp, Bot } from 'lucide-react';
+import { LayoutDashboard, Receipt, Bot, Layers, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Início', url: '/', icon: LayoutDashboard },
   { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
   { title: 'Consultor', url: '/consultor', icon: Bot },
   { title: 'Categorias', url: '/categorias', icon: Layers },
@@ -12,8 +12,8 @@ const items = [
 
 export function MobileNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border md:hidden">
-      <div className="flex items-center justify-around h-14">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border md:hidden safe-area-bottom">
+      <div className="flex items-center justify-around h-16 px-1">
         {items.map((item) => (
           <RRNavLink
             key={item.title}
@@ -21,13 +21,24 @@ export function MobileNav() {
             end={item.url === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-0.5 px-3 py-1.5 text-[10px] transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all min-w-[52px]',
+                isActive
+                  ? 'text-primary'
+                  : 'text-muted-foreground active:scale-95'
               )
             }
           >
-            <item.icon className="h-5 w-5" />
-            <span>{item.title}</span>
+            {({ isActive }) => (
+              <>
+                <div className={cn(
+                  'p-1.5 rounded-lg transition-colors',
+                  isActive ? 'bg-primary/10' : ''
+                )}>
+                  <item.icon className="h-4.5 w-4.5" />
+                </div>
+                <span>{item.title}</span>
+              </>
+            )}
           </RRNavLink>
         ))}
       </div>
