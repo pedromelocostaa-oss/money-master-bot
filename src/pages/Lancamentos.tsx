@@ -1,16 +1,14 @@
 import { useState, useMemo } from 'react';
-import { useTransacoes, useAddTransacao, useDeleteTransacao } from '@/hooks/useFinancas';
-import { CATEGORIAS_GASTO, CATEGORIAS_RECEITA, FORMAS_PAGAMENTO, CATEGORIA_CORES } from '@/lib/constants';
+import { useTransacoes, useDeleteTransacao } from '@/hooks/useFinancas';
+import { CATEGORIA_CORES } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import TransacaoForm from '@/components/TransacaoForm';
 
 export default function Lancamentos() {
   const now = new Date();
