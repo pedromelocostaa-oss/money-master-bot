@@ -5,18 +5,21 @@ import { CATEGORIA_CORES } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Upload, Plus, ChevronDown, ChevronUp, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TransacaoForm from '@/components/TransacaoForm';
 import ImportarTexto from '@/components/ImportarTexto';
 import { FaturaInfo } from '@/components/FaturaInfo';
 
+type SortOrder = 'desc' | 'asc' | 'value-desc' | 'value-asc';
+
 export default function Lancamentos() {
   const now = new Date();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initialMes = searchParams.get('mes') !== null ? Number(searchParams.get('mes')) : now.getMonth();
   const initialAno = searchParams.get('ano') !== null ? Number(searchParams.get('ano')) : now.getFullYear();
   const initialTipo = searchParams.get('tipo') as 'gasto' | 'receita' | null;
@@ -24,6 +27,8 @@ export default function Lancamentos() {
   const [filterMes, setFilterMes] = useState(initialMes);
   const [filterAno, setFilterAno] = useState(initialAno);
   const [filterTipo, setFilterTipo] = useState<'todos' | 'gasto' | 'receita'>(initialTipo || 'todos');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { data: transacoes, isLoading } = useTransacoes(filterMes, filterAno);
@@ -31,9 +36,34 @@ export default function Lancamentos() {
 
   const filteredTransacoes = useMemo(() => {
     if (!transacoes) return undefined;
-    if (filterTipo === 'todos') return transacoes;
-    return transacoes.filter(t => t.tipo === filterTipo);
-  }, [transacoes, filterTipo]);
+    let result = transacoes;
+
+    // Filter by type
+    if (filterTipo !== 'todos') {
+      result = result.filter(t => t.tipo === filterTipo);
+    }
+
+    // Filter by search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(t =>
+        t.descricao.toLowerCase().includes(q) ||
+        t.categoria.toLowerCase().includes(q) ||
+        (t.forma_pagamento && t.forma_pagamento.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      if (sortOrder === 'asc') return a.data.localeCompare(b.data);
+      if (sortOrder === 'desc') return b.data.localeCompare(a.data);
+      if (sortOrder === 'value-desc') return Number(b.valor) - Number(a.valor);
+      if (sortOrder === 'value-asc') return Number(a.valor) - Number(b.valor);
+      return 0;
+    });
+
+    return result;
+  }, [transacoes, filterTipo, searchQuery, sortOrder]);
 
   const navigateMonth = (dir: number) => {
     let m = filterMes + dir;
@@ -70,10 +100,31 @@ export default function Lancamentos() {
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(t);
     });
-    return groups;
-  }, [filteredTransacoes]);
+    // Sort date keys
+    const sortedKeys = Object.keys(groups).sort((a, b) =>
+      sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+    );
+    const sorted: Record<string, typeof filteredTransacoes> = {};
+    sortedKeys.forEach(k => { sorted[k] = groups[k]; });
+    return sorted;
+  }, [filteredTransacoes, sortOrder]);
 
   const currentMonthLabel = monthOptions.find(m => m.value === filterMes)?.label || '';
+
+  const cycleSortOrder = () => {
+    const cycle: SortOrder[] = ['desc', 'asc', 'value-desc', 'value-asc'];
+    const idx = cycle.indexOf(sortOrder);
+    setSortOrder(cycle[(idx + 1) % cycle.length]);
+  };
+
+  const sortLabel = {
+    desc: 'Mais recentes',
+    asc: 'Mais antigos',
+    'value-desc': 'Maior valor',
+    'value-asc': 'Menor valor',
+  }[sortOrder];
+
+  const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -120,7 +171,7 @@ export default function Lancamentos() {
       {/* Fatura info */}
       <FaturaInfo />
 
-      {/* Month nav + summary */}
+      {/* Month nav */}
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <div className="flex items-center gap-1">
           <button
@@ -155,24 +206,9 @@ export default function Lancamentos() {
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <div className="flex bg-secondary rounded-lg p-0.5 ml-1">
-            {(['todos', 'gasto', 'receita'] as const).map(opt => (
-              <button
-                key={opt}
-                onClick={() => setFilterTipo(opt)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                  filterTipo === opt
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {opt === 'todos' ? 'Todos' : opt === 'gasto' ? 'Gastos' : 'Receitas'}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {!isLoading && filteredTransacoes && filteredTransacoes.length > 0 && (
+        {!isLoading && transacoes && transacoes.length > 0 && (
           <div className="flex gap-3 text-xs font-display font-semibold">
             <span className="text-success flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-success" />
@@ -189,6 +225,46 @@ export default function Lancamentos() {
         )}
       </div>
 
+      {/* Filters: type toggle, search, sort */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex bg-secondary rounded-lg p-0.5">
+          {(['todos', 'gasto', 'receita'] as const).map(opt => (
+            <button
+              key={opt}
+              onClick={() => setFilterTipo(opt)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                filterTipo === opt
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {opt === 'todos' ? 'Todos' : opt === 'gasto' ? 'Gastos' : 'Receitas'}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            type="text"
+            placeholder="Buscar descrição, categoria..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-8 text-xs bg-secondary border-border"
+          />
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={cycleSortOrder}
+          className="gap-1.5 h-8 text-xs shrink-0"
+        >
+          <SortIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{sortLabel}</span>
+        </Button>
+      </div>
+
       {/* Transaction list */}
       {isLoading ? (
         <div className="space-y-2">
@@ -197,18 +273,24 @@ export default function Lancamentos() {
       ) : !filteredTransacoes?.length ? (
         <Card className="py-16 bg-card border-border text-center">
           <Receipt className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-          <p className="text-foreground font-medium text-sm">Nenhuma transação</p>
-          <p className="text-muted-foreground text-xs mt-1 max-w-xs mx-auto">
-            Adicione manualmente ou importe sua fatura com IA
+          <p className="text-foreground font-medium text-sm">
+            {searchQuery ? 'Nenhum resultado encontrado' : 'Nenhuma transação'}
           </p>
-          <div className="flex gap-2 justify-center mt-4">
-            <Button size="sm" variant="outline" onClick={() => setShowImport(true)} className="gap-1.5 text-xs">
-              <Upload className="w-3 h-3" /> Importar
-            </Button>
-            <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5 text-xs">
-              <Plus className="w-3 h-3" /> Adicionar
-            </Button>
-          </div>
+          <p className="text-muted-foreground text-xs mt-1 max-w-xs mx-auto">
+            {searchQuery
+              ? `Nenhuma transação corresponde a "${searchQuery}"`
+              : 'Adicione manualmente ou importe sua fatura com IA'}
+          </p>
+          {!searchQuery && (
+            <div className="flex gap-2 justify-center mt-4">
+              <Button size="sm" variant="outline" onClick={() => setShowImport(true)} className="gap-1.5 text-xs">
+                <Upload className="w-3 h-3" /> Importar
+              </Button>
+              <Button size="sm" onClick={() => setShowForm(true)} className="gap-1.5 text-xs">
+                <Plus className="w-3 h-3" /> Adicionar
+              </Button>
+            </div>
+          )}
         </Card>
       ) : (
         <div className="space-y-4">
