@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      limites_categoria: {
+        Row: {
+          categoria: string
+          id: string
+          limite_mensal: number
+          user_id: string
+        }
+        Insert: {
+          categoria: string
+          id?: string
+          limite_mensal: number
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          id?: string
+          limite_mensal?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transacoes: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          descricao: string
+          forma_pagamento: string | null
+          id: string
+          tipo: Database["public"]["Enums"]["tipo_transacao"]
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data: string
+          descricao: string
+          forma_pagamento?: string | null
+          id?: string
+          tipo: Database["public"]["Enums"]["tipo_transacao"]
+          user_id: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          forma_pagamento?: string | null
+          id?: string
+          tipo?: Database["public"]["Enums"]["tipo_transacao"]
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +79,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      tipo_transacao: "gasto" | "receita"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +206,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tipo_transacao: ["gasto", "receita"],
+    },
   },
 } as const
