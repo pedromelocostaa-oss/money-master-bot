@@ -67,12 +67,32 @@ export function useAddTransacao() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: Omit<TransacaoInsert, 'user_id'>) => {
+    mutationFn: async (data: Omit<TransacaoInsert, 'user_id'> & { parcelas?: number }) => {
       if (!user) throw new Error('Não autenticado');
-      const { error } = await supabase
-        .from('transacoes')
-        .insert({ ...data, user_id: user.id });
-      if (error) throw error;
+      const { parcelas, ...rest } = data;
+
+      if (parcelas && parcelas > 1) {
+        const valorParcela = Math.round((Number(rest.valor) / parcelas) * 100) / 100;
+        const baseDate = new Date(rest.data + 'T12:00:00');
+        const rows = Array.from({ length: parcelas }, (_, i) => {
+          const d = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
+          return {
+            ...rest,
+            valor: valorParcela,
+            data: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+            parcela_atual: i + 1,
+            parcelas_total: parcelas,
+            user_id: user.id,
+          };
+        });
+        const { error } = await supabase.from('transacoes').insert(rows);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('transacoes')
+          .insert({ ...rest, user_id: user.id });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] });
