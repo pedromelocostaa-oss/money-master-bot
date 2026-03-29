@@ -397,13 +397,18 @@ export default function Dashboard() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{
-                      backgroundColor: 'hsl(225 16% 14%)',
-                      border: '1px solid hsl(225 12% 22%)',
-                      borderRadius: '10px',
-                      color: 'hsl(210 25% 95%)',
-                      fontSize: '12px',
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const entry = payload[0];
+                      const color = entry.payload?.fill || 'hsl(210 25% 95%)';
+                      return (
+                        <div className="bg-popover border border-border rounded-xl p-3 shadow-2xl shadow-black/20">
+                          <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color }}>
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                            {entry.name}: {formatCurrency(entry.value as number)}
+                          </p>
+                        </div>
+                      );
                     }}
                   />
                 </PieChart>
