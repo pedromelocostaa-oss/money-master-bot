@@ -1,5 +1,4 @@
 import { useAuth } from '@/hooks/useAuth';
-import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -26,17 +25,16 @@ const items = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const location = useLocation();
   const { signOut, user } = useAuth();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <div className="p-4 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0 shadow-glow">
           <TrendingUp className="w-4 h-4 text-primary-foreground" />
         </div>
         {!collapsed && (
-          <span className="font-display font-bold text-foreground text-lg">FinControl</span>
+          <span className="font-display font-bold text-foreground text-lg tracking-tight">FinControl</span>
         )}
       </div>
 
@@ -50,8 +48,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === '/'}
-                      className="hover:bg-accent/50"
-                      activeClassName="bg-accent text-primary font-medium"
+                      className="hover:bg-accent/50 transition-colors rounded-lg"
+                      activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
@@ -74,7 +72,7 @@ export function AppSidebar() {
           variant="ghost"
           size={collapsed ? 'icon' : 'default'}
           onClick={signOut}
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
           <LogOut className="h-4 w-4" />
           {!collapsed && <span className="ml-2">Sair</span>}

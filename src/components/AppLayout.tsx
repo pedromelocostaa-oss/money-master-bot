@@ -2,8 +2,15 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { MobileNav } from '@/components/MobileNav';
+import { useAuth } from '@/hooks/useAuth';
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const firstName = user?.email?.split('@')[0] || '';
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -12,12 +19,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 flex items-center border-b border-border px-4 md:px-6">
-            <SidebarTrigger className="hidden md:flex" />
+          <header className="h-14 flex items-center justify-between border-b border-border px-4 md:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="hidden md:flex" />
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                {greeting}, <span className="text-foreground font-medium">{firstName}</span>
+              </span>
+            </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
-            {children}
+          <main className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 overflow-auto">
+            <div className="max-w-6xl mx-auto">
+              {children}
+            </div>
           </main>
         </div>
 

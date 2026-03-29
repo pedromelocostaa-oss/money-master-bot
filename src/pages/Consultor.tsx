@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Bot, User, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Sparkles, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
@@ -74,7 +73,6 @@ async function streamChat({
 }
 
 export default function Consultor() {
-  const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -124,48 +122,53 @@ export default function Consultor() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    if (!hasAnalyzed) setHasAnalyzed(true);
     sendMessage(input.trim());
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-5rem)] animate-fade-in">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)] animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Consultor IA</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Especialista em finanças pessoais e investimentos</p>
         </div>
         {!hasAnalyzed && (
-          <Button onClick={handleAnalyze} className="gap-1.5" size="sm">
+          <Button onClick={handleAnalyze} className="gap-1.5 shadow-glow" size="sm">
             <Sparkles className="w-3.5 h-3.5" />
             Analisar meus gastos
           </Button>
         )}
       </div>
 
-      {/* Chat area */}
       <Card className="flex-1 bg-card border-border flex flex-col overflow-hidden">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
           {messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                <Bot className="w-7 h-7 text-primary" />
+            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
+                <Bot className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-base font-semibold text-foreground mb-1">FinBot</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Clique em "Analisar meus gastos" para um diagnóstico completo, ou me pergunte qualquer coisa sobre suas finanças.
+              <h3 className="text-lg font-display font-bold text-foreground mb-1">FinBot</h3>
+              <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+                Seu consultor financeiro pessoal. Analiso seus gastos, sugiro investimentos e ajudo a planejar suas finanças.
               </p>
-              <div className="flex flex-wrap gap-2 mt-4 justify-center">
+              <div className="flex flex-wrap gap-2 mt-6 justify-center">
                 {[
-                  'Como posso economizar mais?',
-                  'Quanto devo investir por mês?',
-                  'Meus gastos estão saudáveis?',
+                  { text: 'Analisar meus gastos', icon: '📊' },
+                  { text: 'Como posso economizar?', icon: '💡' },
+                  { text: 'Quanto investir por mês?', icon: '📈' },
+                  { text: 'Meus gastos estão saudáveis?', icon: '🏥' },
                 ].map(q => (
                   <button
-                    key={q}
-                    onClick={() => { setHasAnalyzed(true); sendMessage(q); }}
-                    className="text-xs px-3 py-1.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    key={q.text}
+                    onClick={() => {
+                      setHasAnalyzed(true);
+                      sendMessage(q.text, q.text.includes('Analisar') ? 'analyze' : undefined);
+                    }}
+                    className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-all border border-transparent hover:border-border"
                   >
-                    {q}
+                    <span>{q.icon}</span>
+                    {q.text}
                   </button>
                 ))}
               </div>
@@ -179,13 +182,13 @@ export default function Consultor() {
                   <Bot className="w-3.5 h-3.5 text-primary" />
                 </div>
               )}
-              <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
+              <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
                 msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-foreground'
+                  ? 'bg-primary text-primary-foreground rounded-br-md'
+                  : 'bg-secondary text-foreground rounded-bl-md'
               }`}>
                 {msg.role === 'assistant' ? (
-                  <div className="prose prose-sm prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm">
+                  <div className="prose prose-sm prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:mb-2 [&>ol]:mb-2 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>li]:text-muted-foreground">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
@@ -205,11 +208,11 @@ export default function Consultor() {
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Bot className="w-3.5 h-3.5 text-primary" />
               </div>
-              <div className="bg-secondary rounded-xl px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="bg-secondary rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             </div>
@@ -217,12 +220,12 @@ export default function Consultor() {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="p-3 border-t border-border flex gap-2">
+        <form onSubmit={handleSubmit} className="p-3 border-t border-border flex gap-2 bg-card">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Pergunte sobre seus gastos, investimentos..."
-            className="bg-secondary border-border resize-none min-h-[40px] max-h-[100px] text-sm"
+            className="bg-secondary border-border resize-none min-h-[42px] max-h-[100px] text-sm rounded-xl"
             rows={1}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -231,7 +234,7 @@ export default function Consultor() {
               }
             }}
           />
-          <Button type="submit" size="icon" disabled={isLoading || !input.trim()} className="shrink-0 h-10 w-10">
+          <Button type="submit" size="icon" disabled={isLoading || !input.trim()} className="shrink-0 h-[42px] w-[42px] rounded-xl">
             <Send className="w-4 h-4" />
           </Button>
         </form>
