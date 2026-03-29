@@ -43,6 +43,8 @@ export type Database = {
           descricao: string
           forma_pagamento: string | null
           id: string
+          parcela_atual: number | null
+          parcelas_total: number | null
           tipo: Database["public"]["Enums"]["tipo_transacao"]
           user_id: string
           valor: number
@@ -54,6 +56,8 @@ export type Database = {
           descricao: string
           forma_pagamento?: string | null
           id?: string
+          parcela_atual?: number | null
+          parcelas_total?: number | null
           tipo: Database["public"]["Enums"]["tipo_transacao"]
           user_id: string
           valor: number
@@ -65,6 +69,8 @@ export type Database = {
           descricao?: string
           forma_pagamento?: string | null
           id?: string
+          parcela_atual?: number | null
+          parcelas_total?: number | null
           tipo?: Database["public"]["Enums"]["tipo_transacao"]
           user_id?: string
           valor?: number
