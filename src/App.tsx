@@ -51,7 +51,7 @@ const App = () => (
             <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
             <Route path="/categorias" element={<ProtectedRoute><Categorias /></ProtectedRoute>} />
             <Route path="/projecao" element={<ProtectedRoute><Projecao /></ProtectedRoute>} />
-            <Route path="/importar" element={<ProtectedRoute><ImportarLancamentos /></ProtectedRoute>} />
+            {/* Importar foi movido para dentro de Lançamentos */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
