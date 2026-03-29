@@ -194,7 +194,7 @@ export default function Lancamentos() {
         <div className="space-y-2">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
         </div>
-      ) : !transacoes?.length ? (
+      ) : !filteredTransacoes?.length ? (
         <Card className="py-16 bg-card border-border text-center">
           <Receipt className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-foreground font-medium text-sm">Nenhuma transação</p>
