@@ -4,6 +4,7 @@ import { CATEGORIAS_GASTO, CATEGORIAS_RECEITA, FORMAS_PAGAMENTO } from '@/lib/co
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import CurrencyInput from '@/components/CurrencyInput';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,6 +25,7 @@ export default function TransacaoForm() {
   const [parcelas, setParcelas] = useState('2');
   const [isRecorrente, setIsRecorrente] = useState(false);
   const [mesesRecorrente, setMesesRecorrente] = useState('12');
+  const [recorrenciaSemFim, setRecorrenciaSemFim] = useState(false);
 
   const categorias = tab === 'gasto' ? CATEGORIAS_GASTO : CATEGORIAS_RECEITA;
 
@@ -38,8 +40,12 @@ export default function TransacaoForm() {
       if (!numParcelas || numParcelas < 2) return;
     }
     if (isRecorrente) {
-      numParcelas = parseInt(mesesRecorrente);
-      if (!numParcelas || numParcelas < 2) return;
+      if (recorrenciaSemFim) {
+        numParcelas = 120; // ~10 years
+      } else {
+        numParcelas = parseInt(mesesRecorrente);
+        if (!numParcelas || numParcelas < 2) return;
+      }
     }
 
     addMutation.mutate(
@@ -86,14 +92,10 @@ export default function TransacaoForm() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground">Valor (R$)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0.01"
+            <Label className="text-foreground">Valor</Label>
+            <CurrencyInput
               value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="0,00"
+              onChange={setValor}
               required
               className="bg-secondary border-border"
             />
@@ -169,15 +171,23 @@ export default function TransacaoForm() {
                 <Label className="text-foreground">Recorrente</Label>
               </div>
               {isRecorrente && (
-                <Input
-                  type="number"
-                  min="2"
-                  max="24"
-                  value={mesesRecorrente}
-                  onChange={(e) => setMesesRecorrente(e.target.value)}
-                  placeholder="Nº de meses"
-                  className="bg-secondary border-border"
-                />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={recorrenciaSemFim} onCheckedChange={setRecorrenciaSemFim} />
+                    <Label className="text-xs text-muted-foreground">Sem data para terminar</Label>
+                  </div>
+                  {!recorrenciaSemFim && (
+                    <Input
+                      type="number"
+                      min="2"
+                      max="120"
+                      value={mesesRecorrente}
+                      onChange={(e) => setMesesRecorrente(e.target.value)}
+                      placeholder="Nº de meses"
+                      className="bg-secondary border-border"
+                    />
+                  )}
+                </div>
               )}
             </div>
           )}
