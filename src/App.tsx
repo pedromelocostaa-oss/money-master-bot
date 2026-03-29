@@ -9,7 +9,6 @@ import Dashboard from "./pages/Dashboard";
 import Lancamentos from "./pages/Lancamentos";
 import Categorias from "./pages/Categorias";
 import Projecao from "./pages/Projecao";
-import ImportarLancamentos from "./pages/ImportarLancamentos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
