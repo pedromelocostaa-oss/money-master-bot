@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTransacoes, useDeleteTransacao } from '@/hooks/useFinancas';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/formatters';
@@ -15,12 +16,24 @@ import { FaturaInfo } from '@/components/FaturaInfo';
 
 export default function Lancamentos() {
   const now = new Date();
-  const [filterMes, setFilterMes] = useState(now.getMonth());
-  const [filterAno, setFilterAno] = useState(now.getFullYear());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialMes = searchParams.get('mes') !== null ? Number(searchParams.get('mes')) : now.getMonth();
+  const initialAno = searchParams.get('ano') !== null ? Number(searchParams.get('ano')) : now.getFullYear();
+  const initialTipo = searchParams.get('tipo') as 'gasto' | 'receita' | null;
+
+  const [filterMes, setFilterMes] = useState(initialMes);
+  const [filterAno, setFilterAno] = useState(initialAno);
+  const [filterTipo, setFilterTipo] = useState<'todos' | 'gasto' | 'receita'>(initialTipo || 'todos');
   const [showImport, setShowImport] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { data: transacoes, isLoading } = useTransacoes(filterMes, filterAno);
   const deleteMutation = useDeleteTransacao();
+
+  const filteredTransacoes = useMemo(() => {
+    if (!transacoes) return undefined;
+    if (filterTipo === 'todos') return transacoes;
+    return transacoes.filter(t => t.tipo === filterTipo);
+  }, [transacoes, filterTipo]);
 
   const navigateMonth = (dir: number) => {
     let m = filterMes + dir;
