@@ -331,9 +331,9 @@ export default function Dashboard() {
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 16%)" />
-              <XAxis dataKey="label" tick={{ fill: 'hsl(215 12% 52%)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'hsl(215 12% 52%)', fontSize: 11 }} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 14% 22%)" />
+              <XAxis dataKey="label" tick={{ fill: 'hsl(215 12% 70%)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'hsl(215 12% 70%)', fontSize: 11 }} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: '11px' }} />
               <Bar dataKey="receitas" name="Receitas" fill="hsl(160 64% 40%)" radius={[3, 3, 0, 0]} />
@@ -361,6 +361,8 @@ export default function Dashboard() {
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={{ stroke: 'hsl(215 12% 50%)' }}
                 >
                   {donutData.map((entry) => (
                     <Cell key={entry.name} fill={CATEGORIA_CORES[entry.name] || '#6B7280'} />
@@ -369,15 +371,15 @@ export default function Dashboard() {
                 <Tooltip
                   formatter={(value: number) => formatCurrency(value)}
                   contentStyle={{
-                    backgroundColor: 'hsl(220 18% 12%)',
-                    border: '1px solid hsl(220 14% 16%)',
+                    backgroundColor: 'hsl(220 18% 14%)',
+                    border: '1px solid hsl(220 14% 22%)',
                     borderRadius: '8px',
-                    color: 'hsl(210 20% 92%)',
+                    color: 'hsl(210 20% 95%)',
                     fontSize: '12px',
                   }}
                 />
                 <Legend
-                  formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+                  formatter={(value) => <span className="text-xs" style={{ color: 'hsl(215 12% 75%)' }}>{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
