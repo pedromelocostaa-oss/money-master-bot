@@ -4,6 +4,7 @@ import { CATEGORIAS_GASTO, CATEGORIAS_RECEITA, FORMAS_PAGAMENTO } from '@/lib/co
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import CurrencyInput from '@/components/CurrencyInput';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,6 +25,7 @@ export default function TransacaoForm() {
   const [parcelas, setParcelas] = useState('2');
   const [isRecorrente, setIsRecorrente] = useState(false);
   const [mesesRecorrente, setMesesRecorrente] = useState('12');
+  const [recorrenciaSemFim, setRecorrenciaSemFim] = useState(false);
 
   const categorias = tab === 'gasto' ? CATEGORIAS_GASTO : CATEGORIAS_RECEITA;
 
