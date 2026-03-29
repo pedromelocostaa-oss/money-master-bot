@@ -86,7 +86,7 @@ function useTransacoesRange(months: number) {
 }
 
 export default function Dashboard() {
-  const [viewMode, setViewMode] = useState<ViewMode>('range');
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [rangeOption, setRangeOption] = useState<RangeOption>('6m');
 
   // Month-by-month controls

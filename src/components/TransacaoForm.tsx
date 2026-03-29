@@ -86,14 +86,10 @@ export default function TransacaoForm() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground">Valor (R$)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0.01"
+            <Label className="text-foreground">Valor</Label>
+            <CurrencyInput
               value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="0,00"
+              onChange={setValor}
               required
               className="bg-secondary border-border"
             />
@@ -169,15 +165,23 @@ export default function TransacaoForm() {
                 <Label className="text-foreground">Recorrente</Label>
               </div>
               {isRecorrente && (
-                <Input
-                  type="number"
-                  min="2"
-                  max="24"
-                  value={mesesRecorrente}
-                  onChange={(e) => setMesesRecorrente(e.target.value)}
-                  placeholder="Nº de meses"
-                  className="bg-secondary border-border"
-                />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={recorrenciaSemFim} onCheckedChange={setRecorrenciaSemFim} />
+                    <Label className="text-xs text-muted-foreground">Sem data para terminar</Label>
+                  </div>
+                  {!recorrenciaSemFim && (
+                    <Input
+                      type="number"
+                      min="2"
+                      max="120"
+                      value={mesesRecorrente}
+                      onChange={(e) => setMesesRecorrente(e.target.value)}
+                      placeholder="Nº de meses"
+                      className="bg-secondary border-border"
+                    />
+                  )}
+                </div>
               )}
             </div>
           )}
