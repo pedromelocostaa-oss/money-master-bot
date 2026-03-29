@@ -67,26 +67,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const RENDERIZED_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) => {
-  if (percent < 0.05) return null;
-  const RADIAN = Math.PI / 180;
-  const radius = outerRadius + 24;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="hsl(210 25% 85%)"
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline="central"
-      fontSize={11}
-      fontWeight={500}
-    >
-      {name} {(percent * 100).toFixed(0)}%
-    </text>
-  );
-};
+// No external labels — we use a legend list below the chart
 
 function useTransacoesRange(months: number) {
   const { user } = useAuth();
@@ -393,40 +374,55 @@ export default function Dashboard() {
             {viewMode === 'month' ? monthOptions.find(m => m.value === selectedMes)?.label : 'Mês atual'}
           </p>
           {donutData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[260px] text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
               <Wallet className="w-10 h-10 mb-2 opacity-30" />
               <p className="text-sm">Sem gastos neste período</p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={donutData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={95}
-                  paddingAngle={3}
-                  dataKey="value"
-                  label={RENDERIZED_LABEL}
-                  labelLine={{ stroke: 'hsl(215 12% 35%)', strokeWidth: 1 }}
-                >
-                  {donutData.map((entry) => (
-                    <Cell key={entry.name} fill={CATEGORIA_CORES[entry.name] || '#6B7280'} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
-                  contentStyle={{
-                    backgroundColor: 'hsl(225 16% 14%)',
-                    border: '1px solid hsl(225 12% 22%)',
-                    borderRadius: '10px',
-                    color: 'hsl(210 25% 95%)',
-                    fontSize: '12px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={85}
+                    paddingAngle={3}
+                    dataKey="value"
+                    labelLine={false}
+                  >
+                    {donutData.map((entry) => (
+                      <Cell key={entry.name} fill={CATEGORIA_CORES[entry.name] || '#6B7280'} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    contentStyle={{
+                      backgroundColor: 'hsl(225 16% 14%)',
+                      border: '1px solid hsl(225 12% 22%)',
+                      borderRadius: '10px',
+                      color: 'hsl(210 25% 95%)',
+                      fontSize: '12px',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Legend list */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-3 px-1">
+                {donutData.map((entry) => {
+                  const total = donutData.reduce((s, e) => s + e.value, 0);
+                  const pct = total > 0 ? ((entry.value / total) * 100).toFixed(0) : '0';
+                  return (
+                    <div key={entry.name} className="flex items-center gap-2 text-xs">
+                      <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: CATEGORIA_CORES[entry.name] || '#6B7280' }} />
+                      <span className="text-muted-foreground truncate flex-1">{entry.name}</span>
+                      <span className="text-foreground font-medium tabular-nums">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </Card>
       </div>
