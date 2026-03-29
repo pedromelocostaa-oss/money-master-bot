@@ -12,7 +12,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Receipt, Layers, TrendingUp, LogOut, Upload } from 'lucide-react';
+import { LayoutDashboard, Receipt, Layers, TrendingUp, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const items = [
@@ -20,7 +20,6 @@ const items = [
   { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
   { title: 'Categorias', url: '/categorias', icon: Layers },
   { title: 'Projeção', url: '/projecao', icon: TrendingUp },
-  { title: 'Importar', url: '/importar', icon: Upload },
 ];
 
 export function AppSidebar() {

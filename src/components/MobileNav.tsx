@@ -1,5 +1,5 @@
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Layers, TrendingUp, Upload } from 'lucide-react';
+import { LayoutDashboard, Receipt, Layers, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
@@ -7,13 +7,12 @@ const items = [
   { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
   { title: 'Categorias', url: '/categorias', icon: Layers },
   { title: 'Projeção', url: '/projecao', icon: TrendingUp },
-  { title: 'Importar', url: '/importar', icon: Upload },
 ];
 
 export function MobileNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
-      <div className="flex items-center justify-around h-16">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border md:hidden">
+      <div className="flex items-center justify-around h-14">
         {items.map((item) => (
           <RRNavLink
             key={item.title}
@@ -21,7 +20,7 @@ export function MobileNav() {
             end={item.url === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors',
+                'flex flex-col items-center gap-0.5 px-3 py-1.5 text-[10px] transition-colors',
                 isActive ? 'text-primary' : 'text-muted-foreground'
               )
             }
