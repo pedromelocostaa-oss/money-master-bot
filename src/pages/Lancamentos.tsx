@@ -17,6 +17,21 @@ export default function Lancamentos() {
   const { data: transacoes, isLoading } = useTransacoes(filterMes, filterAno);
   const deleteMutation = useDeleteTransacao();
 
+  const monthOptions = useMemo(() => {
+    const options = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(filterAno, i, 1);
+      options.push({ value: i, label: format(d, 'MMMM') });
+    }
+    return options;
+  }, [filterAno]);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <h1 className="text-2xl font-display font-bold text-foreground">Lançamentos</h1>
+
+      <TransacaoForm />
+
       {/* Filters */}
       <div className="flex gap-3 items-center">
         <Select value={String(filterMes)} onValueChange={(v) => setFilterMes(Number(v))}>
@@ -62,7 +77,12 @@ export default function Lancamentos() {
                 style={{ backgroundColor: CATEGORIA_CORES[t.categoria] || '#6B7280' }}
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{t.descricao}</p>
+                <p className="text-sm font-medium text-foreground truncate">
+                  {t.descricao}
+                  {t.parcelas_total && t.parcelas_total > 1 && (
+                    <span className="text-muted-foreground ml-1">({t.parcela_atual}/{t.parcelas_total})</span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {t.categoria}
                   {t.forma_pagamento && ` · ${t.forma_pagamento}`}
