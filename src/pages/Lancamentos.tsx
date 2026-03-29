@@ -63,15 +63,15 @@ export default function Lancamentos() {
 
   // Group transactions by date
   const groupedTransacoes = useMemo(() => {
-    if (!transacoes) return {};
-    const groups: Record<string, typeof transacoes> = {};
-    transacoes.forEach(t => {
+    if (!filteredTransacoes) return {};
+    const groups: Record<string, typeof filteredTransacoes> = {};
+    filteredTransacoes.forEach(t => {
       const dateKey = t.data;
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(t);
     });
     return groups;
-  }, [transacoes]);
+  }, [filteredTransacoes]);
 
   const currentMonthLabel = monthOptions.find(m => m.value === filterMes)?.label || '';
 
@@ -155,9 +155,24 @@ export default function Lancamentos() {
           >
             <ChevronRight className="w-4 h-4" />
           </button>
+          <div className="flex bg-secondary rounded-lg p-0.5 ml-1">
+            {(['todos', 'gasto', 'receita'] as const).map(opt => (
+              <button
+                key={opt}
+                onClick={() => setFilterTipo(opt)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  filterTipo === opt
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt === 'todos' ? 'Todos' : opt === 'gasto' ? 'Gastos' : 'Receitas'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {!isLoading && transacoes && transacoes.length > 0 && (
+        {!isLoading && filteredTransacoes && filteredTransacoes.length > 0 && (
           <div className="flex gap-3 text-xs font-display font-semibold">
             <span className="text-success flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-success" />
