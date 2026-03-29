@@ -1,10 +1,11 @@
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Layers, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Receipt, Layers, TrendingUp, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
+  { title: 'Consultor', url: '/consultor', icon: Bot },
   { title: 'Categorias', url: '/categorias', icon: Layers },
   { title: 'Projeção', url: '/projecao', icon: TrendingUp },
 ];

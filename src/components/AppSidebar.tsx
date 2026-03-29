@@ -12,12 +12,13 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Receipt, Layers, TrendingUp, LogOut } from 'lucide-react';
+import { LayoutDashboard, Receipt, Layers, TrendingUp, LogOut, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const items = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
+  { title: 'Consultor IA', url: '/consultor', icon: Bot },
   { title: 'Categorias', url: '/categorias', icon: Layers },
   { title: 'Projeção', url: '/projecao', icon: TrendingUp },
 ];

@@ -40,8 +40,12 @@ export default function TransacaoForm() {
       if (!numParcelas || numParcelas < 2) return;
     }
     if (isRecorrente) {
-      numParcelas = parseInt(mesesRecorrente);
-      if (!numParcelas || numParcelas < 2) return;
+      if (recorrenciaSemFim) {
+        numParcelas = 120; // ~10 years
+      } else {
+        numParcelas = parseInt(mesesRecorrente);
+        if (!numParcelas || numParcelas < 2) return;
+      }
     }
 
     addMutation.mutate(
