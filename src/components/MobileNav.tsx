@@ -1,5 +1,5 @@
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Layers, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Receipt, Layers, TrendingUp, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
@@ -7,6 +7,7 @@ const items = [
   { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
   { title: 'Categorias', url: '/categorias', icon: Layers },
   { title: 'Projeção', url: '/projecao', icon: TrendingUp },
+  { title: 'Importar', url: '/importar', icon: Upload },
 ];
 
 export function MobileNav() {
