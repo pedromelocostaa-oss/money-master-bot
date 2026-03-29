@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTransacoes, useDeleteTransacao } from '@/hooks/useFinancas';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/formatters';
@@ -15,12 +16,24 @@ import { FaturaInfo } from '@/components/FaturaInfo';
 
 export default function Lancamentos() {
   const now = new Date();
-  const [filterMes, setFilterMes] = useState(now.getMonth());
-  const [filterAno, setFilterAno] = useState(now.getFullYear());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialMes = searchParams.get('mes') !== null ? Number(searchParams.get('mes')) : now.getMonth();
+  const initialAno = searchParams.get('ano') !== null ? Number(searchParams.get('ano')) : now.getFullYear();
+  const initialTipo = searchParams.get('tipo') as 'gasto' | 'receita' | null;
+
+  const [filterMes, setFilterMes] = useState(initialMes);
+  const [filterAno, setFilterAno] = useState(initialAno);
+  const [filterTipo, setFilterTipo] = useState<'todos' | 'gasto' | 'receita'>(initialTipo || 'todos');
   const [showImport, setShowImport] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { data: transacoes, isLoading } = useTransacoes(filterMes, filterAno);
   const deleteMutation = useDeleteTransacao();
+
+  const filteredTransacoes = useMemo(() => {
+    if (!transacoes) return undefined;
+    if (filterTipo === 'todos') return transacoes;
+    return transacoes.filter(t => t.tipo === filterTipo);
+  }, [transacoes, filterTipo]);
 
   const navigateMonth = (dir: number) => {
     let m = filterMes + dir;
@@ -50,15 +63,15 @@ export default function Lancamentos() {
 
   // Group transactions by date
   const groupedTransacoes = useMemo(() => {
-    if (!transacoes) return {};
-    const groups: Record<string, typeof transacoes> = {};
-    transacoes.forEach(t => {
+    if (!filteredTransacoes) return {};
+    const groups: Record<string, typeof filteredTransacoes> = {};
+    filteredTransacoes.forEach(t => {
       const dateKey = t.data;
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(t);
     });
     return groups;
-  }, [transacoes]);
+  }, [filteredTransacoes]);
 
   const currentMonthLabel = monthOptions.find(m => m.value === filterMes)?.label || '';
 
@@ -142,9 +155,24 @@ export default function Lancamentos() {
           >
             <ChevronRight className="w-4 h-4" />
           </button>
+          <div className="flex bg-secondary rounded-lg p-0.5 ml-1">
+            {(['todos', 'gasto', 'receita'] as const).map(opt => (
+              <button
+                key={opt}
+                onClick={() => setFilterTipo(opt)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  filterTipo === opt
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt === 'todos' ? 'Todos' : opt === 'gasto' ? 'Gastos' : 'Receitas'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {!isLoading && transacoes && transacoes.length > 0 && (
+        {!isLoading && filteredTransacoes && filteredTransacoes.length > 0 && (
           <div className="flex gap-3 text-xs font-display font-semibold">
             <span className="text-success flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-success" />
@@ -166,7 +194,7 @@ export default function Lancamentos() {
         <div className="space-y-2">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
         </div>
-      ) : !transacoes?.length ? (
+      ) : !filteredTransacoes?.length ? (
         <Card className="py-16 bg-card border-border text-center">
           <Receipt className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-foreground font-medium text-sm">Nenhuma transação</p>

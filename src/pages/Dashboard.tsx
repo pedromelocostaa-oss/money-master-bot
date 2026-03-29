@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTransacoes } from '@/hooks/useFinancas';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
@@ -21,12 +22,13 @@ import type { Transacao } from '@/hooks/useFinancas';
 type ViewMode = 'range' | 'month';
 type RangeOption = '3m' | '6m' | '1y';
 
-function MetricCard({ title, value, icon: Icon, variant, subtitle }: {
+function MetricCard({ title, value, icon: Icon, variant, subtitle, onClick }: {
   title: string;
   value: string;
   icon: any;
   variant: 'success' | 'destructive' | 'default' | 'warning';
   subtitle?: string;
+  onClick?: () => void;
 }) {
   const styles = {
     success: { text: 'text-success', bg: 'bg-success/10', icon: 'text-success' },
@@ -37,7 +39,10 @@ function MetricCard({ title, value, icon: Icon, variant, subtitle }: {
   const s = styles[variant];
 
   return (
-    <Card className="p-4 bg-card border-border animate-slide-up hover:border-border/80 transition-colors">
+    <Card
+      className={`p-4 bg-card border-border animate-slide-up hover:border-border/80 transition-colors ${onClick ? 'cursor-pointer hover:bg-accent/30' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
         <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
@@ -90,6 +95,7 @@ function useTransacoesRange(months: number) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [rangeOption, setRangeOption] = useState<RangeOption>('6m');
 
@@ -320,12 +326,14 @@ export default function Dashboard() {
           value={formatCurrency(metrics.receitas)}
           icon={ArrowUpRight}
           variant="success"
+          onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=receita`)}
         />
         <MetricCard
           title="Gastos"
           value={formatCurrency(metrics.gastos)}
           icon={ArrowDownRight}
           variant="destructive"
+          onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=gasto`)}
         />
         <MetricCard
           title="Saldo"
