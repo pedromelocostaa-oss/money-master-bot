@@ -57,6 +57,7 @@ export default function TransacaoForm() {
         forma_pagamento: tab === 'gasto' ? formaPagamento || null : null,
         data,
         parcelas: numParcelas,
+        isRecorrente,
       },
       {
         onSuccess: () => {

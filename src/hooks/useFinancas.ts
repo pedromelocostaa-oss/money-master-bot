@@ -67,12 +67,14 @@ export function useAddTransacao() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: Omit<TransacaoInsert, 'user_id'> & { parcelas?: number }) => {
+    mutationFn: async (data: Omit<TransacaoInsert, 'user_id'> & { parcelas?: number; isRecorrente?: boolean }) => {
       if (!user) throw new Error('Não autenticado');
-      const { parcelas, ...rest } = data;
+      const { parcelas, isRecorrente, ...rest } = data;
 
       if (parcelas && parcelas > 1) {
-        const valorParcela = Math.round((Number(rest.valor) / parcelas) * 100) / 100;
+        const valorParcela = isRecorrente
+          ? Number(rest.valor)
+          : Math.round((Number(rest.valor) / parcelas) * 100) / 100;
         const baseDate = new Date(rest.data + 'T12:00:00');
         const rows = Array.from({ length: parcelas }, (_, i) => {
           const d = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
