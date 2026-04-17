@@ -13,9 +13,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { FaturaInfo } from '@/components/FaturaInfo';
 import PatrimonioCard from '@/components/PatrimonioCard';
+import { useHideValues } from '@/hooks/useHideValues';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Transacao } from '@/hooks/useFinancas';
@@ -97,6 +98,7 @@ function useTransacoesRange(months: number) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { hidden, toggle, mask } = useHideValues();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [rangeOption, setRangeOption] = useState<RangeOption>('6m');
 
