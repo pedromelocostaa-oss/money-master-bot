@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useContas, useCartoes, useUpdateConta, useAddCartao, useUpdateCartao, useDeleteCartao, useSaldosContas } from '@/hooks/useContas';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
