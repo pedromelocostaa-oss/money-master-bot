@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAddTransacao } from '@/hooks/useFinancas';
+import { useContas, useCartoes } from '@/hooks/useContas';
 import { CATEGORIAS_GASTO, CATEGORIAS_RECEITA, FORMAS_PAGAMENTO } from '@/lib/constants';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,19 +8,23 @@ import { Input } from '@/components/ui/input';
 import CurrencyInput from '@/components/CurrencyInput';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function TransacaoForm() {
   const addMutation = useAddTransacao();
+  const { data: contas } = useContas();
+  const { data: cartoes } = useCartoes();
 
   const [tab, setTab] = useState<'gasto' | 'receita'>('gasto');
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [categoria, setCategoria] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
+  const [contaId, setContaId] = useState<string>('');
+  const [cartaoId, setCartaoId] = useState<string>('');
   const [data, setData] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isParcelado, setIsParcelado] = useState(false);
   const [parcelas, setParcelas] = useState('2');
@@ -28,6 +33,7 @@ export default function TransacaoForm() {
   const [recorrenciaSemFim, setRecorrenciaSemFim] = useState(false);
 
   const categorias = tab === 'gasto' ? CATEGORIAS_GASTO : CATEGORIAS_RECEITA;
+  const isCartao = formaPagamento === 'Cartão de crédito';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +47,7 @@ export default function TransacaoForm() {
     }
     if (isRecorrente) {
       if (recorrenciaSemFim) {
-        numParcelas = 120; // ~10 years
+        numParcelas = 120;
       } else {
         numParcelas = parseInt(mesesRecorrente);
         if (!numParcelas || numParcelas < 2) return;
@@ -55,6 +61,8 @@ export default function TransacaoForm() {
         valor: numValor,
         categoria,
         forma_pagamento: tab === 'gasto' ? formaPagamento || null : null,
+        conta_id: contaId || null,
+        cartao_id: tab === 'gasto' && isCartao && cartaoId ? cartaoId : null,
         data,
         parcelas: numParcelas,
         isRecorrente,
@@ -65,6 +73,7 @@ export default function TransacaoForm() {
           setValor('');
           setCategoria('');
           setFormaPagamento('');
+          setCartaoId('');
           setIsParcelado(false);
           setIsRecorrente(false);
         },
@@ -74,7 +83,7 @@ export default function TransacaoForm() {
 
   return (
     <Card className="p-4 md:p-5 bg-card border-border">
-      <Tabs value={tab} onValueChange={(v) => { setTab(v as 'gasto' | 'receita'); setCategoria(''); setIsParcelado(false); setIsRecorrente(false); }}>
+      <Tabs value={tab} onValueChange={(v) => { setTab(v as 'gasto' | 'receita'); setCategoria(''); setIsParcelado(false); setIsRecorrente(false); setCartaoId(''); }}>
         <TabsList className="bg-secondary mb-4">
           <TabsTrigger value="gasto">Novo Gasto</TabsTrigger>
           <TabsTrigger value="receita">Nova Receita</TabsTrigger>
@@ -116,16 +125,48 @@ export default function TransacaoForm() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label className="text-foreground">Conta</Label>
+            <Select value={contaId} onValueChange={setContaId}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione a conta" />
+              </SelectTrigger>
+              <SelectContent>
+                {contas?.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome} <span className="text-muted-foreground text-xs">({c.tipo === 'pj' ? 'PJ' : 'PF'})</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {tab === 'gasto' && (
             <div className="space-y-2">
               <Label className="text-foreground">Forma de pagamento</Label>
-              <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+              <Select value={formaPagamento} onValueChange={(v) => { setFormaPagamento(v); if (v !== 'Cartão de crédito') setCartaoId(''); }}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   {FORMAS_PAGAMENTO.map(f => (
                     <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {tab === 'gasto' && isCartao && (
+            <div className="space-y-2">
+              <Label className="text-foreground">Cartão</Label>
+              <Select value={cartaoId} onValueChange={setCartaoId}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={cartoes && cartoes.length === 0 ? 'Cadastre um cartão em Contas' : 'Selecione o cartão'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cartoes?.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}{c.bandeira ? ` · ${c.bandeira}` : ''}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
