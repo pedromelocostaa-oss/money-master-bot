@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&family=Inter:wght@300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -36,11 +36,11 @@
     --warning: 38 92% 55%;
     --warning-foreground: 225 18% 7%;
 
-    --border: 225 12% 17%;
+    --border: 225 12% 15%;
     --input: 225 12% 18%;
     --ring: 160 64% 40%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --sidebar-background: 225 18% 5%;
     --sidebar-foreground: 210 20% 80%;
@@ -51,8 +51,8 @@
     --sidebar-border: 225 12% 14%;
     --sidebar-ring: 160 64% 40%;
 
-    --font-body: 'DM Sans', system-ui, sans-serif;
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-display: 'Inter', 'Space Grotesk', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
     --gradient-primary: linear-gradient(135deg, hsl(160 64% 40%), hsl(170 70% 45%));
     --gradient-card: linear-gradient(145deg, hsl(225 16% 11%), hsl(225 16% 9%));
@@ -68,10 +68,14 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+    letter-spacing: -0.022em;
   }
 
   /* Better scrollbar */
