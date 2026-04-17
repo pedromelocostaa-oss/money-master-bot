@@ -99,6 +99,7 @@ export function useAddTransacao() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] });
       queryClient.invalidateQueries({ queryKey: ['transacoes-6meses'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
       toast.success('Transação adicionada!');
     },
     onError: (err: any) => {
@@ -118,10 +119,51 @@ export function useDeleteTransacao() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transacoes'] });
       queryClient.invalidateQueries({ queryKey: ['transacoes-6meses'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
       toast.success('Transação removida!');
     },
     onError: (err: any) => {
       toast.error(err.message || 'Erro ao remover transação');
+    },
+  });
+}
+
+export function useDeleteTransacoes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('transacoes').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['transacoes-6meses'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
+      toast.success(`${ids.length} transação(ões) removidas`);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Erro ao remover transações');
+    },
+  });
+}
+
+export function useUpdateTransacao() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string } & Partial<TransacaoInsert>) => {
+      const { error } = await supabase.from('transacoes').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['transacoes-6meses'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
+      toast.success('Transação atualizada');
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Erro ao atualizar transação');
     },
   });
 }
