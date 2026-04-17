@@ -1,12 +1,12 @@
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Bot, Layers, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Receipt, Bot, Wallet, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
   { title: 'Início', url: '/', icon: LayoutDashboard },
-  { title: 'Lançamentos', url: '/lancamentos', icon: Receipt },
-  { title: 'Consultor', url: '/consultor', icon: Bot },
-  { title: 'Categorias', url: '/categorias', icon: Layers },
+  { title: 'Lanç.', url: '/lancamentos', icon: Receipt },
+  { title: 'Contas', url: '/contas', icon: Wallet },
+  { title: 'IA', url: '/consultor', icon: Bot },
   { title: 'Projeção', url: '/projecao', icon: TrendingUp },
 ];
 

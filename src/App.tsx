@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Lancamentos from "./pages/Lancamentos";
 import Categorias from "./pages/Categorias";
 import Projecao from "./pages/Projecao";
+import Contas from "./pages/Contas";
 import Consultor from "./pages/Consultor";
 import NotFound from "./pages/NotFound";
 
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
+            <Route path="/contas" element={<ProtectedRoute><Contas /></ProtectedRoute>} />
             <Route path="/categorias" element={<ProtectedRoute><Categorias /></ProtectedRoute>} />
             <Route path="/projecao" element={<ProtectedRoute><Projecao /></ProtectedRoute>} />
             <Route path="/consultor" element={<ProtectedRoute><Consultor /></ProtectedRoute>} />
