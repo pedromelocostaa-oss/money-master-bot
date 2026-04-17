@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FaturaInfo } from '@/components/FaturaInfo';
+import PatrimonioCard from '@/components/PatrimonioCard';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Transacao } from '@/hooks/useFinancas';
@@ -319,6 +320,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Patrimônio total (todas as contas) */}
+      <PatrimonioCard />
+
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
@@ -336,11 +340,11 @@ export default function Dashboard() {
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=gasto`)}
         />
         <MetricCard
-          title="Saldo"
+          title="Resultado do mês"
           value={formatCurrency(metrics.saldo)}
           icon={Wallet}
           variant={metrics.saldo >= 0 ? 'success' : 'destructive'}
-          subtitle={metrics.saldo >= 0 ? 'Dentro do orçamento' : 'Acima do orçamento'}
+          subtitle={metrics.saldo >= 0 ? 'Receitas − gastos (positivo)' : 'Receitas − gastos (negativo)'}
         />
         <MetricCard
           title="Comprometido"
