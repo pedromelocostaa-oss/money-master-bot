@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FaturaInfo } from '@/components/FaturaInfo';
+import PatrimonioCard from '@/components/PatrimonioCard';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Transacao } from '@/hooks/useFinancas';
