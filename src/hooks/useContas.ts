@@ -52,6 +52,7 @@ export function useUpdateConta() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contas'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
       toast.success('Conta atualizada');
     },
     onError: (err: any) => toast.error(err.message || 'Erro ao atualizar conta'),

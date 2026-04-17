@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 
 interface CurrencyInputProps {
@@ -27,12 +27,23 @@ function parseFromDisplay(display: string): string {
 }
 
 export default function CurrencyInput({ value, onChange, placeholder = 'R$ 0,00', required, className }: CurrencyInputProps) {
-  const [display, setDisplay] = useState(() => {
-    if (!value) return '';
-    const num = parseFloat(value);
+  const formatValue = (v: string) => {
+    if (!v) return '';
+    const num = parseFloat(v);
     if (isNaN(num)) return '';
     return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  });
+  };
+
+  const [display, setDisplay] = useState(() => formatValue(value));
+
+  // Sync display when external value changes (e.g. dialog reopens with different record)
+  useEffect(() => {
+    const currentRaw = parseFromDisplay(display);
+    if (currentRaw !== value) {
+      setDisplay(formatValue(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;

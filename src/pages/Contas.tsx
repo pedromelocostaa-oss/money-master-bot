@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useContas, useCartoes, useUpdateConta, useAddCartao, useUpdateCartao, useDeleteCartao, useSaldosContas } from '@/hooks/useContas';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,12 +49,22 @@ function ContaCard({ conta, saldo, onEdit }: any) {
 
 function EditContaDialog({ conta, open, onOpenChange }: any) {
   const update = useUpdateConta();
-  const [nome, setNome] = useState(conta?.nome || '');
-  const [saldo, setSaldo] = useState(String(conta?.saldo_inicial || '0'));
+  const [nome, setNome] = useState('');
+  const [saldo, setSaldo] = useState('0');
+
+  // Sincroniza os campos sempre que abrir com uma conta diferente
+  useEffect(() => {
+    if (conta && open) {
+      setNome(conta.nome || '');
+      setSaldo(String(conta.saldo_inicial ?? '0'));
+    }
+  }, [conta?.id, open]);
 
   const onSave = () => {
+    const valorNumerico = saldo === '' ? 0 : Number(saldo);
+    if (isNaN(valorNumerico)) return;
     update.mutate(
-      { id: conta.id, nome, saldo_inicial: Number(saldo) || 0 },
+      { id: conta.id, nome, saldo_inicial: valorNumerico },
       { onSuccess: () => onOpenChange(false) }
     );
   };
