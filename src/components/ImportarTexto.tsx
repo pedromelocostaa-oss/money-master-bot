@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Check, Trash2, X } from 'lucide-react';
+import { Sparkles, Check, Trash2, X, Maximize2, Minimize2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import type { Database } from '@/integrations/supabase/types';
