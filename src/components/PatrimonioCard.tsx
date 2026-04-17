@@ -42,64 +42,28 @@ export default function PatrimonioCard() {
         )}
       </div>
 
-      {saldos && saldos.length > 0 && (
-        <>
-          {/* Resumo compacto */}
-          {!expanded && (
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 pt-3 border-t border-border">
-              {saldos.slice(0, 3).map(c => (
-                <div key={c.id} className="flex items-center gap-1.5 text-xs">
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: c.cor || 'hsl(var(--muted-foreground))' }}
-                  />
-                  <span className="text-muted-foreground">{c.nome}</span>
-                  <span className={`font-medium tabular-nums ${c.saldo_atual >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                    {formatCurrency(c.saldo_atual)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Lista expandida */}
-          {expanded && (
-            <div className="mt-3 pt-3 border-t border-border space-y-2 animate-fade-in">
-              {saldos.map(c => {
-                const Icon = c.tipo === 'pj' ? Briefcase : User;
-                return (
-                  <div key={c.id} className="flex items-center justify-between py-1.5">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${c.cor || '#6B7280'}20` }}
-                      >
-                        <Icon className="w-3.5 h-3.5" style={{ color: c.cor || '#6B7280' }} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-foreground">{c.nome}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {c.tipo === 'pj' ? 'Pessoa Jurídica' : 'Pessoa Física'}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`text-sm font-display font-bold tabular-nums ${c.saldo_atual >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                      {formatCurrency(c.saldo_atual)}
-                    </span>
+      {expanded && saldos && saldos.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border space-y-1.5 animate-fade-in">
+          {saldos.map(c => {
+            const Icon = c.tipo === 'pj' ? Briefcase : User;
+            return (
+              <div key={c.id} className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${c.cor || '#6B7280'}20` }}
+                  >
+                    <Icon className="w-3 h-3" style={{ color: c.cor || '#6B7280' }} />
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="mt-3 w-full flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors py-1"
-          >
-            {expanded ? 'Recolher' : `Ver todas as contas (${saldos.length})`}
-            <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          </button>
-        </>
+                  <span className="text-xs text-foreground truncate">{c.nome}</span>
+                </div>
+                <span className={`text-xs font-medium tabular-nums shrink-0 ${c.saldo_atual >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                  {formatCurrency(c.saldo_atual)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       )}
     </Card>
   );
