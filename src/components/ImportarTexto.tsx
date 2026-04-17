@@ -38,6 +38,7 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transacoes, setTransacoes] = useState<ParsedTransacao[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
   const handleParse = async () => {
     if (!texto.trim()) {
