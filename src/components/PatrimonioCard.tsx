@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useSaldosContas } from '@/hooks/useContas';
+import { useHideValues } from '@/hooks/useHideValues';
 import { formatCurrency } from '@/lib/formatters';
 import { Wallet, ChevronDown, Briefcase, User } from 'lucide-react';
 
 export default function PatrimonioCard() {
   const { data: saldos, isLoading } = useSaldosContas();
+  const { mask } = useHideValues();
   const [expanded, setExpanded] = useState(false);
 
   const total = saldos?.reduce((s, c) => s + c.saldo_atual, 0) || 0;
@@ -26,7 +28,7 @@ export default function PatrimonioCard() {
               Patrimônio total
             </p>
             <p className={`text-base md:text-lg font-display font-bold tracking-tight tabular-nums leading-tight ${total >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-              {formatCurrency(total)}
+              {mask(formatCurrency(total))}
             </p>
           </div>
         </div>
@@ -58,7 +60,7 @@ export default function PatrimonioCard() {
                   <span className="text-xs text-foreground truncate">{c.nome}</span>
                 </div>
                 <span className={`text-xs font-medium tabular-nums shrink-0 ${c.saldo_atual >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                  {formatCurrency(c.saldo_atual)}
+                  {mask(formatCurrency(c.saldo_atual))}
                 </span>
               </div>
             );
