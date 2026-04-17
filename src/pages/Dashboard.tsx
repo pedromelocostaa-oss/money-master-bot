@@ -13,9 +13,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { FaturaInfo } from '@/components/FaturaInfo';
 import PatrimonioCard from '@/components/PatrimonioCard';
+import { useHideValues } from '@/hooks/useHideValues';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Transacao } from '@/hooks/useFinancas';
@@ -97,6 +98,7 @@ function useTransacoesRange(months: number) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { hidden, toggle, mask } = useHideValues();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [rangeOption, setRangeOption] = useState<RangeOption>('6m');
 
@@ -239,6 +241,16 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Hide values toggle */}
+          <button
+            onClick={toggle}
+            className="p-1.5 rounded-md bg-secondary hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+            title={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+            aria-label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+          >
+            {hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+
           {/* View mode toggle */}
           <div className="flex bg-secondary rounded-lg p-1">
             <button
@@ -327,28 +339,28 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           title="Receitas"
-          value={formatCurrency(metrics.receitas)}
+          value={mask(formatCurrency(metrics.receitas))}
           icon={ArrowUpRight}
           variant="success"
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=receita`)}
         />
         <MetricCard
           title="Gastos"
-          value={formatCurrency(metrics.gastos)}
+          value={mask(formatCurrency(metrics.gastos))}
           icon={ArrowDownRight}
           variant="destructive"
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=gasto`)}
         />
         <MetricCard
           title="Resultado do mês"
-          value={formatCurrency(metrics.saldo)}
+          value={mask(formatCurrency(metrics.saldo))}
           icon={Wallet}
           variant={metrics.saldo >= 0 ? 'success' : 'destructive'}
           subtitle={metrics.saldo >= 0 ? 'Receitas − gastos (positivo)' : 'Receitas − gastos (negativo)'}
         />
         <MetricCard
           title="Comprometido"
-          value={`${metrics.percentual.toFixed(1)}%`}
+          value={hidden ? '••••' : `${metrics.percentual.toFixed(1)}%`}
           icon={TrendingUp}
           variant={metrics.percentual > 90 ? 'destructive' : metrics.percentual > 70 ? 'warning' : 'default'}
           subtitle={`da receita usada`}

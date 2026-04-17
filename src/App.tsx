@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { HideValuesProvider } from "@/hooks/useHideValues";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -46,8 +47,9 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <HideValuesProvider>
+          <BrowserRouter>
+            <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
@@ -55,9 +57,10 @@ const App = () => (
             <Route path="/categorias" element={<ProtectedRoute><Categorias /></ProtectedRoute>} />
             <Route path="/projecao" element={<ProtectedRoute><Projecao /></ProtectedRoute>} />
             <Route path="/consultor" element={<ProtectedRoute><Consultor /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </HideValuesProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
