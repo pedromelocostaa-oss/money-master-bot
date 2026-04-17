@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Check, Trash2, X } from 'lucide-react';
+import { Sparkles, Check, Trash2, X, Maximize2, Minimize2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import type { Database } from '@/integrations/supabase/types';
@@ -38,6 +38,7 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transacoes, setTransacoes] = useState<ParsedTransacao[]>([]);
+  const [expanded, setExpanded] = useState(false);
 
   const handleParse = async () => {
     if (!texto.trim()) {
@@ -145,13 +146,24 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
         </Button>
       </div>
 
-      <Textarea
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        placeholder={"Cole aqui sua fatura ou lista...\nEx: Supermercado EPA — R$ 32,76\nUber — R$ 12,27"}
-        rows={5}
-        className="bg-secondary border-border resize-none text-sm"
-      />
+      <div className="relative">
+        <Textarea
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          placeholder={"Cole aqui sua fatura ou lista...\nEx: Supermercado EPA — R$ 32,76\nUber — R$ 12,27"}
+          rows={expanded ? 20 : 5}
+          className="bg-secondary border-border resize-none text-sm pr-10 transition-all duration-200"
+        />
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="absolute top-2 right-2 p-1.5 rounded-md bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={expanded ? 'Recolher campo' : 'Expandir campo'}
+          title={expanded ? 'Recolher' : 'Expandir'}
+        >
+          {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+        </button>
+      </div>
 
       <Button
         onClick={handleParse}
