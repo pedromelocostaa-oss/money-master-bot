@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      cartoes: {
+        Row: {
+          bandeira: string | null
+          conta_id: string | null
+          cor: string | null
+          created_at: string
+          dia_fechamento: number | null
+          dia_vencimento: number | null
+          id: string
+          limite: number | null
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bandeira?: string | null
+          conta_id?: string | null
+          cor?: string | null
+          created_at?: string
+          dia_fechamento?: number | null
+          dia_vencimento?: number | null
+          id?: string
+          limite?: number | null
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bandeira?: string | null
+          conta_id?: string | null
+          cor?: string | null
+          created_at?: string
+          dia_fechamento?: number | null
+          dia_vencimento?: number | null
+          id?: string
+          limite?: number | null
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cartoes_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contas: {
+        Row: {
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          saldo_inicial: number
+          tipo: Database["public"]["Enums"]["tipo_conta"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          saldo_inicial?: number
+          tipo: Database["public"]["Enums"]["tipo_conta"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          saldo_inicial?: number
+          tipo?: Database["public"]["Enums"]["tipo_conta"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       limites_categoria: {
         Row: {
           categoria: string
@@ -37,7 +120,9 @@ export type Database = {
       }
       transacoes: {
         Row: {
+          cartao_id: string | null
           categoria: string
+          conta_id: string | null
           created_at: string
           data: string
           descricao: string
@@ -50,7 +135,9 @@ export type Database = {
           valor: number
         }
         Insert: {
+          cartao_id?: string | null
           categoria: string
+          conta_id?: string | null
           created_at?: string
           data: string
           descricao: string
@@ -63,7 +150,9 @@ export type Database = {
           valor: number
         }
         Update: {
+          cartao_id?: string | null
           categoria?: string
+          conta_id?: string | null
           created_at?: string
           data?: string
           descricao?: string
@@ -75,7 +164,22 @@ export type Database = {
           user_id?: string
           valor?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -85,6 +189,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      tipo_conta: "pessoal" | "pj"
       tipo_transacao: "gasto" | "receita"
     }
     CompositeTypes: {
@@ -213,6 +318,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      tipo_conta: ["pessoal", "pj"],
       tipo_transacao: ["gasto", "receita"],
     },
   },
