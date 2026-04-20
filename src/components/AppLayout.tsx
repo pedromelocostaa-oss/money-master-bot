@@ -2,11 +2,21 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { MobileNav } from '@/components/MobileNav';
+import { OnboardingTour } from '@/components/OnboardingTour';
 import { useAuth } from '@/hooks/useAuth';
+
+function formatDisplayName(email: string): string {
+  const local = email.split('@')[0];
+  return local
+    .replace(/[._-]+/g, ' ')
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const firstName = user?.email?.split('@')[0] || '';
+  const displayName = user?.email ? formatDisplayName(user.email) : '';
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
@@ -23,7 +33,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-3">
               <SidebarTrigger className="hidden md:flex" />
               <span className="text-sm text-muted-foreground hidden sm:inline">
-                {greeting}, <span className="text-foreground font-medium">{firstName}</span>
+                {greeting}, <span className="text-foreground font-medium">{displayName}</span>
               </span>
             </div>
           </header>
@@ -36,6 +46,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <MobileNav />
+        <OnboardingTour />
       </div>
     </SidebarProvider>
   );

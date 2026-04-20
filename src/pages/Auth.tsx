@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, TrendingUp, ArrowRight } from 'lucide-react';
+import { Loader2, TrendingUp, ArrowRight, ArrowLeft } from 'lucide-react';
+
+type Mode = 'login' | 'signup' | 'forgot';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,14 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+        if (error) throw error;
+        toast.success('E-mail enviado! Verifique sua caixa de entrada.');
+        setMode('login');
+      } else if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success('Login realizado com sucesso!');
@@ -40,7 +49,7 @@ export default function Auth() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary/8 rounded-full blur-3xl" />
-        
+
         <div className="relative z-10 px-12 max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
@@ -48,7 +57,7 @@ export default function Auth() {
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground">FinControl</h1>
           </div>
-          
+
           <h2 className="text-2xl font-display font-semibold text-foreground mb-3">
             Suas finanças sob controle total
           </h2>
@@ -83,11 +92,26 @@ export default function Auth() {
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-7 shadow-xl shadow-black/10">
+            {mode === 'forgot' && (
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4 transition-colors"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                Voltar ao login
+              </button>
+            )}
+
             <h2 className="text-xl font-display font-bold text-foreground mb-1">
-              {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+              {mode === 'login' ? 'Bem-vindo de volta' : mode === 'signup' ? 'Crie sua conta' : 'Recuperar senha'}
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              {isLogin ? 'Entre para acessar seu painel' : 'Comece a controlar suas finanças'}
+              {mode === 'login'
+                ? 'Entre para acessar seu painel'
+                : mode === 'signup'
+                ? 'Comece a controlar suas finanças'
+                : 'Enviaremos um link de redefinição para seu e-mail'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -104,44 +128,60 @@ export default function Auth() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-foreground text-sm">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="bg-secondary border-border h-11"
-                />
-              </div>
+              {mode !== 'forgot' && (
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-foreground text-sm">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="bg-secondary border-border h-11"
+                  />
+                </div>
+              )}
+
+              {mode === 'login' && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setMode('forgot')}
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+              )}
 
               <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    {isLogin ? 'Entrar' : 'Criar conta'}
+                    {mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Enviar link'}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                   </>
                 )}
               </Button>
             </form>
 
-            <div className="mt-5 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isLogin ? 'Não tem conta? ' : 'Já tem conta? '}
-                <span className="font-medium text-foreground hover:text-primary">
-                  {isLogin ? 'Criar uma' : 'Entrar'}
-                </span>
-              </button>
-            </div>
+            {mode !== 'forgot' && (
+              <div className="mt-5 text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {mode === 'login' ? 'Não tem conta? ' : 'Já tem conta? '}
+                  <span className="font-medium text-foreground hover:text-primary">
+                    {mode === 'login' ? 'Criar uma' : 'Entrar'}
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

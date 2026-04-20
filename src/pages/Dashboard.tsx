@@ -74,8 +74,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-// No external labels — we use a legend list below the chart
-
 function useTransacoesRange(months: number) {
   const { user } = useAuth();
   return useQuery({
@@ -96,6 +94,13 @@ function useTransacoesRange(months: number) {
   });
 }
 
+function deltaText(curr: number, prev: number): string {
+  if (prev === 0) return '';
+  const pct = ((curr - prev) / prev) * 100;
+  const sign = pct >= 0 ? '+' : '';
+  return `${sign}${pct.toFixed(0)}% vs mês anterior`;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { hidden, toggle, mask } = useHideValues();
@@ -106,9 +111,13 @@ export default function Dashboard() {
   const [selectedMes, setSelectedMes] = useState(now.getMonth());
   const [selectedAno, setSelectedAno] = useState(now.getFullYear());
 
+  const prevMes = selectedMes === 0 ? 11 : selectedMes - 1;
+  const prevAno = selectedMes === 0 ? selectedAno - 1 : selectedAno;
+
   const rangeMonths = rangeOption === '3m' ? 3 : rangeOption === '6m' ? 6 : 12;
   const { data: rangeData, isLoading: loadingRange } = useTransacoesRange(rangeMonths);
   const { data: monthData, isLoading: loadingMonth } = useTransacoes(selectedMes, selectedAno);
+  const { data: prevMonthData } = useTransacoes(prevMes, prevAno);
 
   const activeData = viewMode === 'range' ? rangeData : monthData;
   const isLoading = viewMode === 'range' ? loadingRange : loadingMonth;
@@ -140,6 +149,13 @@ export default function Dashboard() {
       percentual: receitas > 0 ? (gastos / receitas) * 100 : 0,
     };
   }, [activeData, viewMode]);
+
+  const prevMetrics = useMemo(() => {
+    if (!prevMonthData) return { receitas: 0, gastos: 0 };
+    const receitas = prevMonthData.filter(t => t.tipo === 'receita').reduce((s, t) => s + Number(t.valor), 0);
+    const gastos = prevMonthData.filter(t => t.tipo === 'gasto').reduce((s, t) => s + Number(t.valor), 0);
+    return { receitas, gastos };
+  }, [prevMonthData]);
 
   const barData = useMemo(() => {
     if (!activeData) return [];
@@ -227,6 +243,9 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const receitasDelta = viewMode === 'month' ? deltaText(metrics.receitas, prevMetrics.receitas) : '';
+  const gastosDelta = viewMode === 'month' ? deltaText(metrics.gastos, prevMetrics.gastos) : '';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -342,6 +361,7 @@ export default function Dashboard() {
           value={mask(formatCurrency(metrics.receitas))}
           icon={ArrowUpRight}
           variant="success"
+          subtitle={receitasDelta || undefined}
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=receita`)}
         />
         <MetricCard
@@ -349,6 +369,7 @@ export default function Dashboard() {
           value={mask(formatCurrency(metrics.gastos))}
           icon={ArrowDownRight}
           variant="destructive"
+          subtitle={gastosDelta || undefined}
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=gasto`)}
         />
         <MetricCard

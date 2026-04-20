@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X } from 'lucide-react';
+import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TransacaoForm from '@/components/TransacaoForm';
@@ -145,6 +145,29 @@ export default function Lancamentos() {
     deleteManyMutation.mutate(ids, { onSuccess: () => setSelected(new Set()) });
   };
 
+  const handleExportCSV = () => {
+    if (!filteredTransacoes || filteredTransacoes.length === 0) return;
+    const header = ['Data', 'Descricao', 'Categoria', 'Tipo', 'Valor', 'Forma de Pagamento', 'Conta', 'Cartao'];
+    const rows = filteredTransacoes.map(t => [
+      t.data,
+      `"${t.descricao.replace(/"/g, '""')}"`,
+      t.categoria,
+      t.tipo,
+      Number(t.valor).toFixed(2).replace('.', ','),
+      t.forma_pagamento || '',
+      contaNome((t as any).conta_id) || '',
+      cartaoNome((t as any).cartao_id) || '',
+    ]);
+    const csv = [header.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lancamentos-${currentMonthLabel}-${filterAno}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -154,6 +177,16 @@ export default function Lancamentos() {
           <p className="text-xs text-muted-foreground mt-0.5">{currentMonthLabel} {filterAno}</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline" size="sm"
+            onClick={handleExportCSV}
+            disabled={!filteredTransacoes || filteredTransacoes.length === 0}
+            title="Exportar CSV"
+            className="gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">CSV</span>
+          </Button>
           <Button
             variant="outline" size="sm"
             onClick={() => { setShowImport(!showImport); if (!showImport) setShowForm(false); }}
