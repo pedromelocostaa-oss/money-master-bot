@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTransacoes, useDeleteTransacao, useDeleteTransacoes, type Transacao } from '@/hooks/useFinancas';
 import { useContas, useCartoes } from '@/hooks/useContas';
+import { useDividas, useToggleDividaPaga, useDeleteDivida } from '@/hooks/useDividas';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import { formatCurrency } from '@/lib/formatters';
 import { Card } from '@/components/ui/card';
@@ -10,10 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download } from 'lucide-react';
+import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download, HandCoins, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TransacaoForm from '@/components/TransacaoForm';
+import DividaForm from '@/components/DividaForm';
 import ImportarTexto from '@/components/ImportarTexto';
 import EditTransacaoDialog from '@/components/EditTransacaoDialog';
 
@@ -34,14 +36,18 @@ export default function Lancamentos() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showDividaForm, setShowDividaForm] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Transacao | null>(null);
 
   const { data: transacoes, isLoading } = useTransacoes(filterMes, filterAno);
   const { data: contas } = useContas();
   const { data: cartoes } = useCartoes();
+  const { data: dividas, isLoading: loadingDividas } = useDividas();
   const deleteMutation = useDeleteTransacao();
   const deleteManyMutation = useDeleteTransacoes();
+  const togglePagaMutation = useToggleDividaPaga();
+  const deleteDividaMutation = useDeleteDivida();
 
   const contaNome = (id: string | null | undefined) => contas?.find(c => c.id === id)?.nome;
   const cartaoNome = (id: string | null | undefined) => cartoes?.find(c => c.id === id)?.nome;
@@ -73,7 +79,6 @@ export default function Lancamentos() {
     return result;
   }, [transacoes, filterTipo, filterConta, searchQuery, sortOrder]);
 
-  // Clear selection when filters change
   useEffect(() => { setSelected(new Set()); }, [filterMes, filterAno, filterTipo, filterConta, searchQuery]);
 
   const navigateMonth = (dir: number) => {
@@ -168,6 +173,25 @@ export default function Lancamentos() {
     URL.revokeObjectURL(url);
   };
 
+  const openDividaForm = () => {
+    setShowDividaForm(!showDividaForm);
+    setShowForm(false);
+    setShowImport(false);
+  };
+  const openForm = () => {
+    setShowForm(!showForm);
+    setShowDividaForm(false);
+    setShowImport(false);
+  };
+  const openImport = () => {
+    setShowImport(!showImport);
+    setShowForm(false);
+    setShowDividaForm(false);
+  };
+
+  const dividasPendentes = (dividas || []).filter(d => !d.pago);
+  const hoje = format(now, 'yyyy-MM-dd');
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -189,15 +213,23 @@ export default function Lancamentos() {
           </Button>
           <Button
             variant="outline" size="sm"
-            onClick={() => { setShowImport(!showImport); if (!showImport) setShowForm(false); }}
+            onClick={openImport}
             className={`gap-1.5 ${showImport ? 'bg-primary/10 border-primary/30 text-primary' : ''}`}
           >
             <Upload className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Importar</span>
           </Button>
           <Button
+            variant="outline" size="sm"
+            onClick={openDividaForm}
+            className={`gap-1.5 ${showDividaForm ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'text-amber-400 border-amber-500/30 hover:bg-amber-500/10'}`}
+          >
+            <HandCoins className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Dívida</span>
+          </Button>
+          <Button
             size="sm"
-            onClick={() => { setShowForm(!showForm); if (!showForm) setShowImport(false); }}
+            onClick={openForm}
             className="gap-1.5"
           >
             {showForm ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -211,6 +243,7 @@ export default function Lancamentos() {
           <ImportarTexto onClose={() => setShowImport(false)} />
         </Card>
       )}
+      {showDividaForm && <div className="animate-scale-in"><DividaForm /></div>}
       {showForm && <div className="animate-scale-in"><TransacaoForm /></div>}
 
       {/* Month nav + totals */}
@@ -319,7 +352,7 @@ export default function Lancamentos() {
         </div>
       )}
 
-      {/* List */}
+      {/* Transactions list */}
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 rounded-2xl" />)}
@@ -418,6 +451,84 @@ export default function Lancamentos() {
           })}
         </div>
       )}
+
+      {/* ── Dívidas a Receber ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3 mt-4">
+          <div className="flex items-center gap-2">
+            <HandCoins className="w-4 h-4 text-amber-400" />
+            <h2 className="text-sm font-semibold text-foreground">Dívidas a Receber</h2>
+            {dividasPendentes.length > 0 && (
+              <span className="text-xs font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
+                {formatCurrency(dividasPendentes.reduce((s, d) => s + Number(d.valor), 0))}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {loadingDividas ? (
+          <div className="space-y-2">
+            {[1, 2].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}
+          </div>
+        ) : !dividas?.length ? (
+          <Card className="py-10 bg-card border-border text-center">
+            <HandCoins className="w-10 h-10 mx-auto text-muted-foreground/20 mb-2" />
+            <p className="text-xs text-muted-foreground">Nenhuma dívida cadastrada</p>
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5">Clique em "Dívida" para registrar quem te deve</p>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {dividas.map(d => {
+              const vencida = !d.pago && d.data_vencimento < hoje;
+              const venceHoje = !d.pago && d.data_vencimento === hoje;
+              return (
+                <Card
+                  key={d.id}
+                  className={`px-4 py-3 border flex items-center gap-3 transition-all group ${
+                    d.pago
+                      ? 'bg-card/50 border-border opacity-60'
+                      : vencida
+                      ? 'bg-destructive/5 border-destructive/20'
+                      : venceHoje
+                      ? 'bg-warning/5 border-warning/20'
+                      : 'bg-card border-amber-500/20'
+                  }`}
+                >
+                  <button
+                    onClick={() => togglePagaMutation.mutate({ id: d.id, pago: !d.pago })}
+                    className="shrink-0 text-muted-foreground hover:text-amber-400 transition-colors"
+                    title={d.pago ? 'Marcar como pendente' : 'Marcar como pago'}
+                  >
+                    <CheckCircle2 className={`w-4.5 h-4.5 ${d.pago ? 'text-success' : 'text-muted-foreground/40'}`} />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${d.pago ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      {d.nome}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {d.descricao && <span className="text-[11px] text-muted-foreground truncate">{d.descricao}</span>}
+                      <span className={`flex items-center gap-1 text-[10px] font-medium ${vencida ? 'text-destructive' : venceHoje ? 'text-warning' : 'text-muted-foreground'}`}>
+                        {vencida ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {d.pago ? 'Pago' : `Vence ${format(new Date(d.data_vencimento + 'T12:00:00'), "dd/MM/yy")}`}
+                      </span>
+                    </div>
+                  </div>
+                  <span className={`text-sm font-display font-bold shrink-0 tabular-nums ${d.pago ? 'text-muted-foreground' : 'text-amber-400'}`}>
+                    {formatCurrency(Number(d.valor))}
+                  </span>
+                  <Button
+                    variant="ghost" size="icon"
+                    onClick={() => deleteDividaMutation.mutate(d.id)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive h-7 w-7 shrink-0 transition-opacity"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <EditTransacaoDialog
         transacao={editing}

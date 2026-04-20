@@ -13,8 +13,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, CalendarRange, ChevronLeft, ChevronRight, Eye, EyeOff, HandCoins } from 'lucide-react';
 import { FaturaInfo } from '@/components/FaturaInfo';
+import { useDividas } from '@/hooks/useDividas';
 import PatrimonioCard from '@/components/PatrimonioCard';
 import { useHideValues } from '@/hooks/useHideValues';
 import { format } from 'date-fns';
@@ -110,6 +111,8 @@ export default function Dashboard() {
   const now = new Date();
   const [selectedMes, setSelectedMes] = useState(now.getMonth());
   const [selectedAno, setSelectedAno] = useState(now.getFullYear());
+
+  const { data: dividas } = useDividas();
 
   const prevMes = selectedMes === 0 ? 11 : selectedMes - 1;
   const prevAno = selectedMes === 0 ? selectedAno - 1 : selectedAno;
@@ -353,6 +356,31 @@ export default function Dashboard() {
 
       {/* Patrimônio total (todas as contas) */}
       <PatrimonioCard />
+
+      {/* Dívidas a Receber */}
+      {(() => {
+        const pendentes = (dividas || []).filter(d => !d.pago);
+        const total = pendentes.reduce((s, d) => s + Number(d.valor), 0);
+        const vencidas = pendentes.filter(d => d.data_vencimento < new Date().toISOString().slice(0,10)).length;
+        if (!dividas || dividas.length === 0) return null;
+        return (
+          <Card className="p-4 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors cursor-pointer" onClick={() => navigate('/lancamentos')}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+                <HandCoins className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">A Receber</p>
+                <p className="text-xl font-display font-bold text-amber-400 mt-0.5">{mask(formatCurrency(total))}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs text-muted-foreground">{pendentes.length} pendente{pendentes.length !== 1 ? 's' : ''}</p>
+                {vencidas > 0 && <p className="text-[11px] text-destructive font-medium">{vencidas} vencida{vencidas !== 1 ? 's' : ''}</p>}
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

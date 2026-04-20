@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
@@ -8,9 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, Check, Trash2, X, Maximize2, Minimize2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
 type TipoTransacao = Database['public']['Enums']['tipo_transacao'];
@@ -31,6 +34,21 @@ interface ImportarTextoProps {
   onClose: () => void;
 }
 
+const now = new Date();
+
+function buildMonthOptions() {
+  return Array.from({ length: 13 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 6 + i, 1);
+    const label = format(d, 'MMMM yyyy', { locale: ptBR });
+    return {
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: label.charAt(0).toUpperCase() + label.slice(1),
+      mes: d.getMonth(),
+      ano: d.getFullYear(),
+    };
+  });
+}
+
 export default function ImportarTexto({ onClose }: ImportarTextoProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -39,6 +57,11 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
   const [saving, setSaving] = useState(false);
   const [transacoes, setTransacoes] = useState<ParsedTransacao[]>([]);
   const [expanded, setExpanded] = useState(false);
+
+  const monthOptions = useMemo(() => buildMonthOptions(), []);
+  const currentMonthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [targetMonth, setTargetMonth] = useState(currentMonthValue);
+  const [tipoOverride, setTipoOverride] = useState<'auto' | 'gasto' | 'receita'>('auto');
 
   const handleParse = async () => {
     if (!texto.trim()) {
@@ -98,19 +121,31 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
       return;
     }
 
+    const [targetAno, targetMesStr] = targetMonth.split('-');
+    const ano = parseInt(targetAno);
+    const mes = parseInt(targetMesStr) - 1;
+
     setSaving(true);
     try {
-      const rows = selected.map(t => ({
-        descricao: t.descricao,
-        valor: t.valor,
-        data: t.data,
-        tipo: t.tipo,
-        categoria: t.categoria,
-        forma_pagamento: t.forma_pagamento || null,
-        parcela_atual: t.parcela_atual || null,
-        parcelas_total: t.parcelas_total || null,
-        user_id: user.id,
-      }));
+      const rows = selected.map(t => {
+        // Override date to target month, keeping original day if valid
+        const originalDay = new Date(t.data + 'T12:00:00').getDate();
+        const daysInTargetMonth = new Date(ano, mes + 1, 0).getDate();
+        const day = Math.min(originalDay, daysInTargetMonth);
+        const overriddenDate = `${targetAno}-${targetMesStr}-${String(day).padStart(2, '0')}`;
+
+        return {
+          descricao: t.descricao,
+          valor: t.valor,
+          data: overriddenDate,
+          tipo: tipoOverride !== 'auto' ? tipoOverride : t.tipo,
+          categoria: t.categoria,
+          forma_pagamento: t.forma_pagamento || null,
+          parcela_atual: t.parcela_atual || null,
+          parcelas_total: t.parcelas_total || null,
+          user_id: user.id,
+        };
+      });
 
       const { error } = await supabase.from('transacoes').insert(rows);
       if (error) throw error;
@@ -129,8 +164,8 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
   };
 
   const selectedCount = transacoes.filter(t => t.selected).length;
-  const totalGastos = transacoes.filter(t => t.selected && t.tipo === 'gasto').reduce((s, t) => s + t.valor, 0);
-  const totalReceitas = transacoes.filter(t => t.selected && t.tipo === 'receita').reduce((s, t) => s + t.valor, 0);
+  const totalGastos = transacoes.filter(t => t.selected && (tipoOverride === 'gasto' || (tipoOverride === 'auto' && t.tipo === 'gasto'))).reduce((s, t) => s + t.valor, 0);
+  const totalReceitas = transacoes.filter(t => t.selected && (tipoOverride === 'receita' || (tipoOverride === 'auto' && t.tipo === 'receita'))).reduce((s, t) => s + t.valor, 0);
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -146,6 +181,47 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
         </Button>
       </div>
 
+      {/* Month & type selectors */}
+      <div className="flex flex-wrap gap-3">
+        <div className="flex-1 min-w-[160px] space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Mês de referência</p>
+          <Select value={targetMonth} onValueChange={setTargetMonth}>
+            <SelectTrigger className="bg-secondary border-border h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex-1 min-w-[140px] space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Tipo</p>
+          <div className="flex bg-secondary rounded-lg p-0.5 h-9">
+            {(['auto', 'gasto', 'receita'] as const).map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setTipoOverride(opt)}
+                className={`flex-1 rounded-md text-[11px] font-medium transition-all ${
+                  tipoOverride === opt
+                    ? opt === 'gasto'
+                      ? 'bg-destructive/20 text-destructive'
+                      : opt === 'receita'
+                      ? 'bg-success/20 text-success'
+                      : 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt === 'auto' ? 'Auto' : opt === 'gasto' ? 'Gasto' : 'Receita'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="relative">
         <Textarea
           value={texto}
@@ -159,7 +235,6 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
           onClick={() => setExpanded(v => !v)}
           className="absolute top-2 right-2 p-1.5 rounded-md bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
           aria-label={expanded ? 'Recolher campo' : 'Expandir campo'}
-          title={expanded ? 'Recolher' : 'Expandir'}
         >
           {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         </button>
@@ -215,38 +290,43 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
           </div>
 
           <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
-            {transacoes.map((t, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2.5 p-2.5 rounded-lg bg-secondary/50 transition-opacity ${!t.selected ? 'opacity-40' : ''}`}
-              >
-                <Checkbox checked={t.selected} onCheckedChange={() => toggleItem(i)} />
+            {transacoes.map((t, i) => {
+              const displayTipo = tipoOverride !== 'auto' ? tipoOverride : t.tipo;
+              return (
                 <div
-                  className="w-1.5 h-8 rounded-full shrink-0"
-                  style={{ backgroundColor: CATEGORIA_CORES[t.categoria] || 'hsl(var(--muted-foreground))' }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground truncate">
-                    {t.descricao}
-                    {t.parcelas_total && t.parcelas_total > 1 && (
-                      <span className="text-muted-foreground ml-1">({t.parcela_atual}/{t.parcelas_total})</span>
-                    )}
-                  </p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">{t.categoria}</span>
-                    {t.forma_pagamento && (
-                      <span className="text-[10px] text-muted-foreground">· {t.forma_pagamento}</span>
-                    )}
+                  key={i}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-lg bg-secondary/50 transition-opacity ${!t.selected ? 'opacity-40' : ''}`}
+                >
+                  <Checkbox checked={t.selected} onCheckedChange={() => toggleItem(i)} />
+                  <div
+                    className="w-1.5 h-8 rounded-full shrink-0"
+                    style={{ backgroundColor: CATEGORIA_CORES[t.categoria] || 'hsl(var(--muted-foreground))' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">
+                      {t.descricao}
+                      {t.parcelas_total && t.parcelas_total > 1 && (
+                        <span className="text-muted-foreground ml-1">({t.parcela_atual}/{t.parcelas_total})</span>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">{t.categoria}</span>
+                      {tipoOverride !== 'auto' && (
+                        <span className={`text-[10px] font-semibold ${tipoOverride === 'gasto' ? 'text-destructive' : 'text-success'}`}>
+                          · {tipoOverride}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <span className={`text-xs font-display font-bold shrink-0 ${displayTipo === 'receita' ? 'text-success' : 'text-destructive'}`}>
+                    {displayTipo === 'receita' ? '+' : '-'}{formatCurrency(t.valor)}
+                  </span>
+                  <button onClick={() => removeItem(i)} className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <span className={`text-xs font-display font-bold shrink-0 ${t.tipo === 'receita' ? 'text-success' : 'text-destructive'}`}>
-                  {t.tipo === 'receita' ? '+' : '-'}{formatCurrency(t.valor)}
-                </span>
-                <button onClick={() => removeItem(i)} className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <Button
@@ -263,7 +343,7 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
             ) : (
               <>
                 <Check className="w-3.5 h-3.5 mr-2" />
-                Salvar {selectedCount} transações
+                Salvar {selectedCount} transações em {monthOptions.find(m => m.value === targetMonth)?.label}
               </>
             )}
           </Button>
