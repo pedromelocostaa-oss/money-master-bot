@@ -12,7 +12,7 @@ const items = [
 
 export function MobileNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border md:hidden safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar/90 backdrop-blur-2xl border-t border-border/50 md:hidden safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-1">
         {items.map((item) => (
           <RRNavLink
@@ -31,7 +31,7 @@ export function MobileNav() {
             {({ isActive }) => (
               <>
                 <div className={cn(
-                  'p-1.5 rounded-lg transition-colors',
+                  'p-1.5 rounded-[10px] transition-colors',
                   isActive ? 'bg-primary/10' : ''
                 )}>
                   <item.icon className="h-4.5 w-4.5" />

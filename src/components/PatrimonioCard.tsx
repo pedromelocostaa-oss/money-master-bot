@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
 import { useSaldosContas } from '@/hooks/useContas';
 import { useHideValues } from '@/hooks/useHideValues';
 import { formatCurrency } from '@/lib/formatters';
@@ -17,35 +16,33 @@ export default function PatrimonioCard() {
   }
 
   return (
-    <Card className="p-3 bg-card border-border animate-slide-up">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Wallet className="w-3.5 h-3.5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide leading-tight">
-              Patrimônio total
-            </p>
-            <p className={`text-base md:text-lg font-display font-bold tracking-tight tabular-nums leading-tight ${total >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-              {mask(formatCurrency(total))}
-            </p>
-          </div>
+    <div className="animate-slide-up">
+      <div className="rounded-2xl p-6 bg-gradient-to-br from-primary to-[#5AC8FA] shadow-[0_4px_20px_rgba(0,122,255,0.25)] flex items-center justify-between">
+        <div>
+          <p className="text-sm text-white/70 font-medium mb-2">Patrimônio Total</p>
+          <p className="text-[32px] font-bold text-white tracking-tight leading-none">
+            {mask(formatCurrency(total))}
+          </p>
+          <p className="text-xs text-white/60 mt-1.5">{saldos?.length || 0} contas ativas</p>
         </div>
-
-        {saldos && saldos.length > 0 && (
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent shrink-0"
-          >
-            {expanded ? 'Recolher' : `${saldos.length} contas`}
-            <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          </button>
-        )}
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-14 h-14 rounded-[18px] bg-white/20 flex items-center justify-center">
+            <Wallet className="w-7 h-7 text-white" />
+          </div>
+          {saldos && saldos.length > 0 && (
+            <button
+              onClick={() => setExpanded(v => !v)}
+              className="flex items-center gap-1 text-[11px] text-white/70 hover:text-white transition-colors"
+            >
+              {expanded ? 'Recolher' : 'Detalhes'}
+              <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+        </div>
       </div>
 
       {expanded && saldos && saldos.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-border space-y-1.5 animate-fade-in">
+        <div className="mt-3 pt-3 border-t border-white/20 space-y-1.5 animate-fade-in">
           {saldos.map(c => {
             const Icon = c.tipo === 'pj' ? Briefcase : User;
             return (
@@ -57,9 +54,9 @@ export default function PatrimonioCard() {
                   >
                     <Icon className="w-3 h-3" style={{ color: c.cor || '#6B7280' }} />
                   </div>
-                  <span className="text-xs text-foreground truncate">{c.nome}</span>
+                  <span className="text-xs text-white/80 truncate">{c.nome}</span>
                 </div>
-                <span className={`text-xs font-medium tabular-nums shrink-0 ${c.saldo_atual >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                <span className={`text-xs font-medium tabular-nums shrink-0 ${c.saldo_atual >= 0 ? 'text-white' : 'text-red-200'}`}>
                   {mask(formatCurrency(c.saldo_atual))}
                 </span>
               </div>
@@ -67,6 +64,6 @@ export default function PatrimonioCard() {
           })}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

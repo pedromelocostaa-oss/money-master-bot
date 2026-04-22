@@ -23,21 +23,33 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
+
+        {/* Sidebar — desktop only */}
         <div className="hidden md:block">
           <AppSidebar />
         </div>
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center justify-between border-b border-border px-4 md:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+
+          {/* Header com glassmorphism */}
+          <header className="
+            h-[50px] flex items-center justify-between
+            border-b border-border/60
+            px-5 md:px-7
+            bg-sidebar/85 backdrop-blur-2xl
+            sticky top-0 z-30
+          ">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="hidden md:flex" />
+              <SidebarTrigger className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors" />
               <span className="text-sm text-muted-foreground hidden sm:inline">
-                {greeting}, <span className="text-foreground font-medium">{displayName}</span>
+                {greeting},{' '}
+                <span className="text-foreground font-semibold">{displayName}</span>
               </span>
             </div>
           </header>
 
+          {/* Conteúdo principal */}
           <main className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 overflow-auto">
             <div className="max-w-6xl mx-auto">
               {children}

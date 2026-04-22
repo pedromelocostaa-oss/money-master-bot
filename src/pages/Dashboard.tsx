@@ -43,12 +43,12 @@ function MetricCard({ title, value, icon: Icon, variant, subtitle, onClick }: {
 
   return (
     <Card
-      className={`p-4 bg-card border-border animate-slide-up hover:border-border/80 transition-colors ${onClick ? 'cursor-pointer hover:bg-accent/30' : ''}`}
+      className={`p-[18px] bg-card shadow-apple-md border-0 rounded-xl animate-slide-up hover:shadow-apple-lg transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
-        <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+        <div className={`w-[30px] h-[30px] rounded-[9px] ${s.bg} flex items-center justify-center`}>
           <Icon className={`w-4 h-4 ${s.icon}`} />
         </div>
       </div>
@@ -255,7 +255,7 @@ export default function Dashboard() {
       {/* Header with controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-[26px] font-display font-bold text-foreground tracking-tight">Dashboard</h1>
           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
             <CalendarRange className="w-3 h-3" />
             {metricsLabel}
@@ -277,9 +277,9 @@ export default function Dashboard() {
           <div className="flex bg-secondary rounded-lg p-1">
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all ${
                 viewMode === 'month'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-card shadow-apple-sm text-foreground font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -287,9 +287,9 @@ export default function Dashboard() {
             </button>
             <button
               onClick={() => setViewMode('range')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all ${
                 viewMode === 'range'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-card shadow-apple-sm text-foreground font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -421,7 +421,7 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-5 bg-card border-border">
+        <Card className="p-5 bg-card shadow-apple-md border-0 rounded-xl">
           <h3 className="text-sm font-semibold text-foreground mb-1">
             {viewMode === 'month' ? 'Receitas vs Gastos' : 'Evolução'}
           </h3>
@@ -441,7 +441,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="p-5 bg-card border-border">
+        <Card className="p-5 bg-card shadow-apple-md border-0 rounded-xl">
           <h3 className="text-sm font-semibold text-foreground mb-1">Gastos por categoria</h3>
           <p className="text-[11px] text-muted-foreground mb-4">
             {viewMode === 'month' ? monthOptions.find(m => m.value === selectedMes)?.label : 'Mês atual'}

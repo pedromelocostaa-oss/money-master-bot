@@ -1,161 +1,215 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&family=Inter:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* ── Light mode (padrão) ── */
   :root {
-    --background: 225 18% 7%;
-    --foreground: 210 25% 95%;
+    /* Backgrounds */
+    --background:          250 14% 96%;   /* #F2F2F7 — iOS grouped background */
+    --foreground:          0 0% 0%;       /* #000000 */
 
-    --card: 225 16% 10%;
-    --card-foreground: 210 25% 95%;
+    /* Cards / Surfaces */
+    --card:                0 0% 100%;     /* #FFFFFF */
+    --card-foreground:     0 0% 0%;
 
-    --popover: 225 16% 12%;
-    --popover-foreground: 210 25% 95%;
+    --popover:             0 0% 100%;
+    --popover-foreground:  0 0% 0%;
 
-    --primary: 160 64% 40%;
-    --primary-foreground: 225 18% 7%;
+    /* Primary = Apple Blue */
+    --primary:             211 100% 50%;  /* #007AFF */
+    --primary-foreground:  0 0% 100%;
 
-    --secondary: 225 14% 13%;
-    --secondary-foreground: 210 20% 82%;
+    /* Secondary surface */
+    --secondary:           240 5% 92%;    /* #E5E5EA */
+    --secondary-foreground: 240 4% 25%;
 
-    --muted: 225 12% 16%;
-    --muted-foreground: 215 15% 63%;
+    /* Muted */
+    --muted:               240 5% 94%;
+    --muted-foreground:    240 4% 46%;   /* rgba(60,60,67,0.6) */
 
-    --accent: 225 14% 17%;
-    --accent-foreground: 210 25% 95%;
+    /* Accent */
+    --accent:              240 5% 94%;
+    --accent-foreground:   0 0% 0%;
 
-    --destructive: 0 72% 56%;
-    --destructive-foreground: 210 25% 98%;
+    /* Status */
+    --destructive:         4 90% 58%;    /* #FF3B30 */
+    --destructive-foreground: 0 0% 100%;
+    --success:             142 69% 58%;  /* #34C759 */
+    --success-foreground:  0 0% 100%;
+    --warning:             35 100% 50%;  /* #FF9500 */
+    --warning-foreground:  0 0% 100%;
 
-    --success: 160 64% 44%;
-    --success-foreground: 225 18% 7%;
+    /* Borders / Inputs */
+    --border:              240 6% 88%;   /* rgba(60,60,67,0.18) */
+    --input:               240 5% 92%;
+    --ring:                211 100% 50%;
 
-    --warning: 38 92% 55%;
-    --warning-foreground: 225 18% 7%;
+    /* Radius */
+    --radius: 0.75rem;                   /* 12px base — Apple usa 12-16px */
 
-    --border: 225 12% 15%;
-    --input: 225 12% 18%;
-    --ring: 160 64% 40%;
+    /* Sidebar */
+    --sidebar-background:  250 14% 97%;
+    --sidebar-foreground:  240 4% 40%;
+    --sidebar-primary:     211 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      240 5% 92%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border:      240 6% 90%;
+    --sidebar-ring:        211 100% 50%;
 
-    --radius: 1rem;
+    /* Custom Apple tokens */
+    --apple-green:   142 69% 58%;
+    --apple-red:     4 90% 58%;
+    --apple-orange:  35 100% 50%;
+    --apple-blue:    211 100% 50%;
+    --apple-purple:  280 68% 60%;
+    --apple-teal:    199 77% 55%;
 
-    --sidebar-background: 225 18% 5%;
-    --sidebar-foreground: 210 20% 80%;
-    --sidebar-primary: 160 64% 40%;
-    --sidebar-primary-foreground: 225 18% 7%;
-    --sidebar-accent: 225 14% 12%;
-    --sidebar-accent-foreground: 210 25% 95%;
-    --sidebar-border: 225 12% 14%;
-    --sidebar-ring: 160 64% 40%;
+    /* Shadows */
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:  0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-lg:  0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
 
-    --font-body: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    --font-display: 'Inter', 'Space Grotesk', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    /* Fonts */
+    --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Inter', sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Inter', sans-serif;
+  }
 
-    --gradient-primary: linear-gradient(135deg, hsl(160 64% 40%), hsl(170 70% 45%));
-    --gradient-card: linear-gradient(145deg, hsl(225 16% 11%), hsl(225 16% 9%));
-    --shadow-glow: 0 0 20px -5px hsl(160 64% 40% / 0.15);
+  /* ── Dark mode ── */
+  .dark {
+    --background:          0 0% 0%;      /* #000000 — iOS dark background */
+    --foreground:          0 0% 100%;
+
+    --card:                240 5% 11%;   /* #1C1C1E */
+    --card-foreground:     0 0% 100%;
+
+    --popover:             240 4% 16%;   /* #2C2C2E */
+    --popover-foreground:  0 0% 100%;
+
+    --primary:             211 100% 50%;
+    --primary-foreground:  0 0% 100%;
+
+    --secondary:           240 4% 18%;   /* #2C2C2E */
+    --secondary-foreground: 0 0% 85%;
+
+    --muted:               240 4% 18%;
+    --muted-foreground:    240 5% 65%;   /* rgba(235,235,245,0.6) */
+
+    --accent:              240 4% 22%;
+    --accent-foreground:   0 0% 100%;
+
+    --destructive:         4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --success:             142 69% 58%;
+    --success-foreground:  0 0% 100%;
+    --warning:             35 100% 50%;
+    --warning-foreground:  0 0% 100%;
+
+    --border:              240 4% 32%;   /* rgba(84,84,88,0.55) */
+    --input:               240 4% 22%;
+    --ring:                211 100% 50%;
+
+    --sidebar-background:  0 0% 5%;
+    --sidebar-foreground:  240 5% 70%;
+    --sidebar-primary:     211 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      240 4% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border:      240 4% 14%;
+    --sidebar-ring:        211 100% 50%;
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25);
+    --shadow-md:  0 4px 16px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30);
+    --shadow-lg:  0 8px 32px rgba(0,0,0,0.50), 0 2px 6px rgba(0,0,0,0.35);
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.011em;
+    letter-spacing: -0.008em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    letter-spacing: -0.022em;
+    letter-spacing: -0.025em;
   }
 
-  /* Better scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: hsl(225 12% 22%);
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(225 12% 30%);
-  }
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
 }
 
+/* ── Utility classes ── */
 @layer utilities {
-  .font-display {
-    font-family: var(--font-display);
+  /* Fonts */
+  .font-display { font-family: var(--font-display); }
+  .font-body    { font-family: var(--font-body); }
+
+  /* Status colors */
+  .text-success  { color: hsl(var(--success)); }
+  .text-warning  { color: hsl(var(--warning)); }
+  .bg-success    { background-color: hsl(var(--success)); }
+  .bg-warning    { background-color: hsl(var(--warning)); }
+
+  /* Apple-specific tints */
+  .bg-success\/10  { background-color: hsl(var(--success) / 0.12); }
+  .bg-destructive\/10 { background-color: hsl(var(--destructive) / 0.12); }
+  .bg-warning\/10  { background-color: hsl(var(--warning) / 0.12); }
+  .bg-primary\/10  { background-color: hsl(var(--primary) / 0.12); }
+
+  /* Glassmorphism / blur (sidebar, header) */
+  .glass {
+    background: hsl(var(--sidebar-background) / 0.85);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
   }
 
-  .font-body {
-    font-family: var(--font-body);
+  /* Shadows */
+  .shadow-apple-sm { box-shadow: var(--shadow-sm); }
+  .shadow-apple-md { box-shadow: var(--shadow-md); }
+  .shadow-apple-lg { box-shadow: var(--shadow-lg); }
+
+  /* Card sem borda visível — shadow apenas */
+  .card-apple {
+    background: hsl(var(--card));
+    border-radius: 1rem;
+    box-shadow: var(--shadow-md);
+    border: none;
   }
 
-  .text-success {
-    color: hsl(var(--success));
-  }
-
-  .text-warning {
-    color: hsl(var(--warning));
-  }
-
-  .bg-success {
-    background-color: hsl(var(--success));
-  }
-
-  .bg-warning {
-    background-color: hsl(var(--warning));
-  }
-
+  /* Gradients */
   .gradient-primary {
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, #5AC8FA 100%);
+  }
+  .gradient-success {
+    background: linear-gradient(135deg, hsl(var(--success)) 0%, #30D158 100%);
   }
 
-  .gradient-card {
-    background: var(--gradient-card);
-  }
-
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.35s ease-out;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
+  /* Animations */
+  .animate-fade-in  { animation: fadeIn  0.22s ease-out; }
+  .animate-slide-up { animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+  .animate-scale-in { animation: scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
-
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }

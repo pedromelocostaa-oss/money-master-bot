@@ -230,7 +230,7 @@ export default function Lancamentos() {
           <Button
             size="sm"
             onClick={openForm}
-            className="gap-1.5"
+            className="gap-1.5 bg-primary/10 text-primary hover:bg-primary/15 border-0 font-semibold"
           >
             {showForm ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{showForm ? 'Fechar' : 'Novo'}</span>
@@ -322,7 +322,7 @@ export default function Lancamentos() {
             type="text" placeholder="Buscar..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-8 text-xs bg-secondary border-border"
+            className="h-[34px] bg-muted border-0 rounded-[10px] text-sm pl-8 focus-visible:ring-2 focus-visible:ring-primary/30"
           />
         </div>
 
@@ -386,66 +386,72 @@ export default function Lancamentos() {
                     {dayTotal >= 0 ? '+' : ''}{formatCurrency(dayTotal)}
                   </span>
                 </div>
-                <div className="space-y-1.5">
-                  {items.map(t => {
+                <Card className="shadow-apple-md border-0 rounded-xl overflow-hidden">
+                  {items.map((t, i) => {
                     const isSel = selected.has(t.id);
                     const conta = contaNome((t as any).conta_id);
                     const cartao = cartaoNome((t as any).cartao_id);
                     return (
-                      <Card
-                        key={t.id}
-                        className={`px-3 py-2.5 md:px-4 md:py-3 border flex items-center gap-3 transition-all group ${
-                          isSel ? 'bg-primary/5 border-primary/40' : 'bg-card border-border hover:bg-accent/20'
-                        }`}
-                      >
-                        <Checkbox
-                          checked={isSel}
-                          onCheckedChange={() => toggleOne(t.id)}
-                          className={`shrink-0 transition-opacity ${selected.size > 0 || isSel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                        />
+                      <div key={t.id}>
+                        {i > 0 && <div className="h-px bg-border/50 mx-4" />}
                         <div
-                          className="w-1 h-9 rounded-full shrink-0"
-                          style={{ backgroundColor: CATEGORIA_CORES[t.categoria] || 'hsl(var(--muted-foreground))' }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {t.descricao}
-                            {t.parcelas_total && t.parcelas_total > 1 && (
-                              <span className="text-muted-foreground ml-1.5 text-[11px] font-normal">
-                                {t.parcela_atual}/{t.parcelas_total}
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                            {t.categoria}
-                            {cartao ? ` · ${cartao}` : t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
-                            {conta ? ` · ${conta}` : ''}
-                          </p>
-                        </div>
-                        <span className={`text-sm font-display font-bold shrink-0 tabular-nums ${t.tipo === 'receita' ? 'text-success' : 'text-destructive'}`}>
-                          {t.tipo === 'receita' ? '+' : '-'}{formatCurrency(Number(t.valor))}
-                        </span>
-                        <div className="flex shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost" size="icon"
-                            onClick={() => setEditing(t)}
-                            className="text-muted-foreground hover:text-primary h-7 w-7"
+                          className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors group ${
+                            isSel ? 'bg-primary/5' : ''
+                          }`}
+                        >
+                          <Checkbox
+                            checked={isSel}
+                            onCheckedChange={() => toggleOne(t.id)}
+                            className={`shrink-0 transition-opacity ${selected.size > 0 || isSel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                          />
+                          <div
+                            className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                            style={{ background: `${CATEGORIA_CORES[t.categoria] || '#6B7280'}1E` }}
                           >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon"
-                            onClick={() => deleteMutation.mutate(t.id)}
-                            disabled={deleteMutation.isPending}
-                            className="text-muted-foreground hover:text-destructive h-7 w-7"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                            <div className="w-2.5 h-2.5 rounded-[3px]" style={{ background: CATEGORIA_CORES[t.categoria] || '#6B7280' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {t.descricao}
+                              {t.parcelas_total && t.parcelas_total > 1 && (
+                                <span className="text-muted-foreground ml-1.5 text-[11px] font-normal">
+                                  {t.parcela_atual}/{t.parcelas_total}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                              {t.categoria}
+                              {cartao ? ` · ${cartao}` : t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
+                              {conta ? ` · ${conta}` : ''}
+                            </p>
+                          </div>
+                          <span className={`text-[15px] font-semibold shrink-0 tabular-nums ${
+                            t.tipo === 'receita' ? 'text-success' : 'text-foreground'
+                          }`}>
+                            {t.tipo === 'receita' ? '+' : '-'}{formatCurrency(Number(t.valor))}
+                          </span>
+                          <div className="flex shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost" size="icon"
+                              onClick={() => setEditing(t)}
+                              className="text-muted-foreground hover:text-primary h-7 w-7"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon"
+                              onClick={() => deleteMutation.mutate(t.id)}
+                              disabled={deleteMutation.isPending}
+                              className="text-muted-foreground hover:text-destructive h-7 w-7"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </div>
-                      </Card>
+                      </div>
                     );
                   })}
-                </div>
+                </Card>
               </div>
             );
           })}
