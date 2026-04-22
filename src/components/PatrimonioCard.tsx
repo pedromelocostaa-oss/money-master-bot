@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Card } from '@/components/ui/card';
 import { useSaldosContas } from '@/hooks/useContas';
 import { useHideValues } from '@/hooks/useHideValues';
 import { formatCurrency } from '@/lib/formatters';
