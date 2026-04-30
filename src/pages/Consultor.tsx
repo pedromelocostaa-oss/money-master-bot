@@ -2,28 +2,29 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Bot, User, Sparkles, MessageCircle } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Check, X, AlertTriangle, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/formatters';
 import ReactMarkdown from 'react-markdown';
 
-type Msg = { role: 'user' | 'assistant'; content: string };
+type Msg = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+type PendingAction = {
+  acao: 'criar' | 'deletar' | 'atualizar';
+  ids: string[];
+  transacao: Record<string, any> | null;
+  mensagem: string;
+};
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-financeiro`;
 
-async function streamChat({
-  messages,
-  action,
-  onDelta,
-  onDone,
-  onError,
-}: {
-  messages: Msg[];
-  action?: string;
-  onDelta: (text: string) => void;
-  onDone: () => void;
-  onError: (err: string) => void;
-}) {
+async function sendToAI(messages: Msg[], action?: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
@@ -39,49 +40,48 @@ async function streamChat({
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: 'Erro desconhecido' }));
-    onError(err.error || `Erro ${resp.status}`);
-    return;
+    throw new Error(err.error || `Erro ${resp.status}`);
   }
 
-  if (!resp.body) { onError('Sem resposta'); return; }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    let idx: number;
-    while ((idx = buffer.indexOf('\n')) !== -1) {
-      let line = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 1);
-      if (line.endsWith('\r')) line = line.slice(0, -1);
-      if (!line.startsWith('data: ')) continue;
-      const json = line.slice(6).trim();
-      if (json === '[DONE]') { onDone(); return; }
-      try {
-        const parsed = JSON.parse(json);
-        const content = parsed.choices?.[0]?.delta?.content;
-        if (content) onDelta(content);
-      } catch { /* partial json */ }
-    }
-  }
-  onDone();
+  return resp.json();
 }
 
+const actionIcon = {
+  criar: <Plus className="w-4 h-4 text-success" />,
+  deletar: <Trash2 className="w-4 h-4 text-destructive" />,
+  atualizar: <Pencil className="w-4 h-4 text-blue-400" />,
+};
+
+const actionLabel = {
+  criar: 'Criar lançamento',
+  deletar: 'Excluir lançamento(s)',
+  atualizar: 'Atualizar lançamento',
+};
+
+const actionColor = {
+  criar: 'border-success/30 bg-success/5',
+  deletar: 'border-destructive/30 bg-destructive/5',
+  atualizar: 'border-blue-400/30 bg-blue-400/5',
+};
+
 export default function Consultor() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [executing, setExecuting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, pendingAction]);
+
+  const addAssistantMsg = (content: string) => {
+    setMessages(prev => [...prev, { role: 'assistant', content }]);
+  };
 
   const sendMessage = async (text: string, action?: string) => {
     const userMsg: Msg = { role: 'user', content: text };
@@ -89,29 +89,78 @@ export default function Consultor() {
     if (!action) setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    setPendingAction(null);
 
-    let assistantContent = '';
-    const upsert = (chunk: string) => {
-      assistantContent += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'assistant') {
-          return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-        }
-        return [...prev, { role: 'assistant', content: assistantContent }];
-      });
-    };
+    try {
+      const result = await sendToAI(newMessages, action);
 
-    await streamChat({
-      messages: newMessages,
-      action,
-      onDelta: upsert,
-      onDone: () => setIsLoading(false),
-      onError: (err) => {
-        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${err}` }]);
-        setIsLoading(false);
-      },
-    });
+      if (result.type === 'action') {
+        setPendingAction({
+          acao: result.acao,
+          ids: result.ids || [],
+          transacao: result.transacao || null,
+          mensagem: result.mensagem,
+        });
+      } else if (result.type === 'text') {
+        addAssistantMsg(result.content);
+      } else if (result.type === 'error') {
+        addAssistantMsg(`❌ ${result.error}`);
+      }
+    } catch (err: any) {
+      addAssistantMsg(`❌ ${err.message || 'Erro ao conectar com a IA'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const executeAction = async () => {
+    if (!pendingAction || !user) return;
+    setExecuting(true);
+
+    try {
+      const { acao, ids, transacao } = pendingAction;
+
+      if (acao === 'deletar') {
+        if (!ids.length) throw new Error('Nenhum ID informado para exclusão');
+        const { error } = await supabase.from('transacoes').delete().in('id', ids);
+        if (error) throw error;
+        toast.success(`${ids.length} transação(ões) excluída(s)!`);
+        addAssistantMsg(`✅ Pronto! ${ids.length} transação(ões) excluída(s) com sucesso.`);
+
+      } else if (acao === 'criar') {
+        if (!transacao) throw new Error('Dados da transação não informados');
+        const { error } = await supabase.from('transacoes').insert({
+          ...transacao,
+          user_id: user.id,
+        });
+        if (error) throw error;
+        toast.success('Transação criada!');
+        addAssistantMsg(`✅ Lançamento **${transacao.descricao}** (${formatCurrency(transacao.valor)}) criado com sucesso!`);
+
+      } else if (acao === 'atualizar') {
+        if (!ids.length || !transacao) throw new Error('ID ou dados não informados para atualização');
+        const { error } = await supabase.from('transacoes').update(transacao).in('id', ids);
+        if (error) throw error;
+        toast.success('Transação atualizada!');
+        addAssistantMsg(`✅ Lançamento atualizado com sucesso!`);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['transacoes-6meses'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
+
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao executar ação');
+      addAssistantMsg(`❌ Erro ao executar: ${err.message}`);
+    } finally {
+      setExecuting(false);
+      setPendingAction(null);
+    }
+  };
+
+  const cancelAction = () => {
+    setPendingAction(null);
+    addAssistantMsg('Ok, ação cancelada. Posso ajudar com mais alguma coisa?');
   };
 
   const handleAnalyze = () => {
@@ -131,7 +180,7 @@ export default function Consultor() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Consultor IA</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Especialista em finanças pessoais e investimentos</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Analisa e gerencia seus lançamentos via chat</p>
         </div>
         {!hasAnalyzed && (
           <Button onClick={handleAnalyze} className="gap-1.5 shadow-glow" size="sm">
@@ -143,27 +192,27 @@ export default function Consultor() {
 
       <Card className="flex-1 bg-card border-border flex flex-col overflow-hidden">
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
-          {messages.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && !pendingAction && (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
                 <Bot className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-lg font-display font-bold text-foreground mb-1">FinBot</h3>
               <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-                Seu consultor financeiro pessoal. Analiso seus gastos, sugiro investimentos e ajudo a planejar suas finanças.
+                Seu assistente financeiro. Analiso seus gastos, identifico duplicatas e gerencio seus lançamentos via chat.
               </p>
               <div className="flex flex-wrap gap-2 mt-6 justify-center">
                 {[
-                  { text: 'Analisar meus gastos', icon: '📊' },
-                  { text: 'Como posso economizar?', icon: '💡' },
-                  { text: 'Quanto investir por mês?', icon: '📈' },
-                  { text: 'Meus gastos estão saudáveis?', icon: '🏥' },
+                  { text: 'Analisar meus gastos', icon: '📊', action: 'analyze' },
+                  { text: 'Apagar duplicatas de abril', icon: '🗑️' },
+                  { text: 'Adicionar lançamento', icon: '➕' },
+                  { text: 'Quais gastos estão duplicados?', icon: '🔍' },
                 ].map(q => (
                   <button
                     key={q.text}
                     onClick={() => {
                       setHasAnalyzed(true);
-                      sendMessage(q.text, q.text.includes('Analisar') ? 'analyze' : undefined);
+                      sendMessage(q.text, q.action);
                     }}
                     className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-all border border-transparent hover:border-border"
                   >
@@ -203,7 +252,7 @@ export default function Consultor() {
             </div>
           ))}
 
-          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+          {isLoading && (
             <div className="flex gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Bot className="w-3.5 h-3.5 text-primary" />
@@ -217,6 +266,59 @@ export default function Consultor() {
               </div>
             </div>
           )}
+
+          {/* Confirmation card */}
+          {pendingAction && !isLoading && (
+            <div className="flex gap-2.5 justify-start">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Bot className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div className={`max-w-[85%] rounded-2xl rounded-bl-md border p-4 space-y-3 ${actionColor[pendingAction.acao]}`}>
+                <div className="flex items-center gap-2">
+                  {actionIcon[pendingAction.acao]}
+                  <span className="text-sm font-semibold text-foreground">{actionLabel[pendingAction.acao]}</span>
+                </div>
+
+                <p className="text-sm text-foreground leading-relaxed">{pendingAction.mensagem}</p>
+
+                {pendingAction.acao === 'criar' && pendingAction.transacao && (
+                  <div className="bg-background/50 rounded-lg p-3 text-xs space-y-1 text-muted-foreground">
+                    <p><span className="text-foreground font-medium">Descrição:</span> {pendingAction.transacao.descricao}</p>
+                    <p><span className="text-foreground font-medium">Valor:</span> {formatCurrency(pendingAction.transacao.valor)}</p>
+                    <p><span className="text-foreground font-medium">Data:</span> {pendingAction.transacao.data}</p>
+                    <p><span className="text-foreground font-medium">Categoria:</span> {pendingAction.transacao.categoria}</p>
+                    {pendingAction.transacao.forma_pagamento && (
+                      <p><span className="text-foreground font-medium">Pagamento:</span> {pendingAction.transacao.forma_pagamento}</p>
+                    )}
+                  </div>
+                )}
+
+                {pendingAction.acao === 'deletar' && pendingAction.ids.length > 0 && (
+                  <p className="text-xs text-muted-foreground">{pendingAction.ids.length} transação(ões) serão excluídas permanentemente.</p>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    onClick={executeAction}
+                    disabled={executing}
+                    className={`gap-1.5 ${pendingAction.acao === 'deletar' ? 'bg-destructive hover:bg-destructive/90' : ''}`}
+                  >
+                    {executing ? (
+                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    Confirmar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={cancelAction} disabled={executing} className="gap-1.5">
+                    <X className="w-3.5 h-3.5" />
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -224,7 +326,7 @@ export default function Consultor() {
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Pergunte sobre seus gastos, investimentos..."
+            placeholder="Ex: apaga o posto duplicado de abril, adiciona Wizmartmg R$ 89,90 no dia 28/04..."
             className="bg-secondary border-border resize-none min-h-[42px] max-h-[100px] text-sm rounded-xl"
             rows={1}
             onKeyDown={(e) => {
