@@ -23,12 +23,11 @@ serve(async (req) => {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: "Não autenticado" }), {
+      return new Response(JSON.stringify({ type: "error", error: "Não autenticado" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch last 6 months of transactions WITH IDs so AI can reference them
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const startDate = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`;
@@ -40,84 +39,46 @@ serve(async (req) => {
       .order("data", { ascending: false })
       .limit(500);
 
-    const txList = (transacoes || []);
+    const txList = transacoes || [];
     const resumo = buildFinancialSummary(txList);
     const txDetalhes = buildTransactionList(txList);
 
-    const systemPrompt = `Você é o FinBot, assistente financeiro pessoal do usuário. Você pode analisar as finanças E gerenciar lançamentos diretamente.
+    const systemPrompt = `Você é o FinBot, assistente financeiro pessoal. Você analisa finanças E gerencia lançamentos diretamente.
 
 DADOS FINANCEIROS (últimos 6 meses):
 ${resumo}
 
-LISTA COMPLETA DE TRANSAÇÕES (com IDs para referência):
+LISTA COMPLETA DE TRANSAÇÕES (com IDs):
 ${txDetalhes}
 
-CAPACIDADES:
-- Analisar padrões de gastos e dar conselhos financeiros
-- CRIAR novas transações
-- DELETAR transações (inclusive duplicatas)
-- ATUALIZAR transações existentes
+========================================
+REGRAS DE RESPOSTA — MUITO IMPORTANTE:
 
-COMO USAR AS FERRAMENTAS:
-- Quando o usuário pedir para criar/deletar/atualizar, use a ferramenta "gerenciar_transacoes"
-- Para deletar duplicatas, identifique os IDs duplicados e use a ferramenta com acao="deletar"
-- Para criar, preencha todos os campos da transação
-- A ferramenta retorna uma confirmação para o usuário aprovar antes de executar
-- SEMPRE inclua uma mensagem clara explicando o que será feito
+Para respostas normais (análise, perguntas, explicações): responda em texto livre em português.
 
-REGRAS:
+Quando o usuário pedir para CRIAR, DELETAR ou ATUALIZAR transações, responda SOMENTE com um bloco JSON válido, sem nenhum texto antes ou depois:
+
+Para DELETAR:
+{"action":"deletar","ids":["id1","id2"],"mensagem":"Descrição clara do que será excluído"}
+
+Para CRIAR:
+{"action":"criar","transacao":{"descricao":"Nome","valor":100.00,"data":"2026-05-01","tipo":"gasto","categoria":"Alimentação","forma_pagamento":"Cartão de crédito"},"mensagem":"Descrição do que será criado"}
+
+Para ATUALIZAR:
+{"action":"atualizar","ids":["id1"],"transacao":{"descricao":"Novo nome","valor":50.00},"mensagem":"Descrição da atualização"}
+
+REGRAS GERAIS:
 - Responda sempre em português brasileiro
 - Use R$ para valores
-- Seja direto e prático
-- Quando for executar ações, explique o que está fazendo
-- Se não tiver certeza de qual transação deletar, pergunte mais detalhes
 - Categorias válidas para gastos: Alimentação, Moradia, Transporte, Saúde, Lazer, Educação, Vestuário, Assinaturas, Outros
 - Categorias válidas para receitas: Salário, Freelance, Investimentos, Outros
 - Formas de pagamento: Cartão de crédito, Débito, Pix, Dinheiro
+- Datas no formato YYYY-MM-DD
+- Se não encontrar o ID exato de uma transação, pergunte mais detalhes antes de agir
+- Se o usuário pedir para deletar duplicatas, identifique os IDs duplicados na lista e retorne o JSON de delete com todos os IDs a remover de uma vez
+========================================
 
 ${action === 'analyze' ? 'Faça uma análise completa e detalhada dos gastos, identificando padrões, pontos de atenção e sugestões práticas.' : ''}`;
-
-    const tools = [
-      {
-        type: "function",
-        function: {
-          name: "gerenciar_transacoes",
-          description: "Cria, deleta ou atualiza transações financeiras do usuário. Use quando o usuário pedir para adicionar, remover ou editar lançamentos.",
-          parameters: {
-            type: "object",
-            properties: {
-              acao: {
-                type: "string",
-                enum: ["criar", "deletar", "atualizar"],
-                description: "Tipo de operação a realizar"
-              },
-              ids: {
-                type: "array",
-                items: { type: "string" },
-                description: "IDs das transações a deletar ou atualizar (obrigatório para deletar/atualizar)"
-              },
-              transacao: {
-                type: "object",
-                description: "Dados da transação para criar ou os campos a atualizar",
-                properties: {
-                  descricao: { type: "string" },
-                  valor: { type: "number" },
-                  data: { type: "string", description: "Formato YYYY-MM-DD" },
-                  tipo: { type: "string", enum: ["gasto", "receita"] },
-                  categoria: { type: "string" },
-                  forma_pagamento: { type: "string", nullable: true }
-                }
-              },
-              mensagem: {
-                type: "string",
-                description: "Mensagem clara para mostrar ao usuário explicando o que será feito, ex: 'Excluir 2 lançamentos duplicados do Posto de Combustíveis (R$ 150,00 cada) dos dias 05/04'"
-              }
-            },
-            required: ["acao", "mensagem"]
-          }
-        }
-      }
-    ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -131,7 +92,6 @@ ${action === 'analyze' ? 'Faça uma análise completa e detalhada dos gastos, id
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        tools,
         stream: false,
       }),
     });
@@ -149,35 +109,39 @@ ${action === 'analyze' ? 'Faça uma análise completa e detalhada dos gastos, id
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error("AI gateway error: " + response.status);
+      throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const message = data.choices?.[0]?.message;
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (e) {
+      throw new Error("Resposta inválida do gateway de IA");
+    }
 
-    // Check if AI wants to perform an action
-    if (message?.tool_calls?.length > 0) {
-      const toolCall = message.tool_calls[0];
-      let args: any;
+    const content: string = data.choices?.[0]?.message?.content || "";
+
+    // Check if response is a JSON action
+    const trimmed = content.trim();
+    if (trimmed.startsWith("{")) {
       try {
-        args = JSON.parse(toolCall.function.arguments);
+        const parsed = JSON.parse(trimmed);
+        if (parsed.action) {
+          return new Response(JSON.stringify({
+            type: "action",
+            acao: parsed.action,
+            ids: parsed.ids || [],
+            transacao: parsed.transacao || null,
+            mensagem: parsed.mensagem || "Confirmar operação?",
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       } catch {
-        throw new Error("Erro ao processar ação da IA");
+        // Not valid JSON action, fall through to text response
       }
-
-      return new Response(JSON.stringify({
-        type: "action",
-        acao: args.acao,
-        ids: args.ids || [],
-        transacao: args.transacao || null,
-        mensagem: args.mensagem || "Confirmar operação?",
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
-    // Regular text response
-    const content = message?.content || "";
     return new Response(JSON.stringify({ type: "text", content }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
