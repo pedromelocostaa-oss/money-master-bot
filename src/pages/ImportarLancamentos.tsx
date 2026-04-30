@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
@@ -9,9 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, Sparkles, Check, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, Sparkles, Check, Trash2, CreditCard, Banknote } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
 
 type TipoTransacao = Database['public']['Enums']['tipo_transacao'];
@@ -28,6 +31,19 @@ interface ParsedTransacao {
   selected?: boolean;
 }
 
+const now = new Date();
+
+function buildMonthOptions() {
+  return Array.from({ length: 13 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 6 + i, 1);
+    const label = format(d, 'MMMM yyyy', { locale: ptBR });
+    return {
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: label.charAt(0).toUpperCase() + label.slice(1),
+    };
+  });
+}
+
 export default function ImportarLancamentos() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -35,6 +51,19 @@ export default function ImportarLancamentos() {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transacoes, setTransacoes] = useState<ParsedTransacao[]>([]);
+
+  const monthOptions = useMemo(() => buildMonthOptions(), []);
+  const currentMonthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthValue = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const [importMode, setImportMode] = useState<'pix' | 'cartao'>('pix');
+  const [targetMonth, setTargetMonth] = useState(currentMonthValue);
+
+  const handleImportModeChange = (mode: 'pix' | 'cartao') => {
+    setImportMode(mode);
+    setTargetMonth(mode === 'cartao' ? nextMonthValue : currentMonthValue);
+  };
 
   const handleParse = async () => {
     if (!texto.trim()) {
@@ -94,19 +123,30 @@ export default function ImportarLancamentos() {
       return;
     }
 
+    const [targetAno, targetMesStr] = targetMonth.split('-');
+    const ano = parseInt(targetAno);
+    const mes = parseInt(targetMesStr) - 1;
+
     setSaving(true);
     try {
-      const rows = selected.map(t => ({
-        descricao: t.descricao,
-        valor: t.valor,
-        data: t.data,
-        tipo: t.tipo,
-        categoria: t.categoria,
-        forma_pagamento: t.forma_pagamento || null,
-        parcela_atual: t.parcela_atual || null,
-        parcelas_total: t.parcelas_total || null,
-        user_id: user.id,
-      }));
+      const rows = selected.map(t => {
+        const originalDay = new Date(t.data + 'T12:00:00').getDate();
+        const daysInTargetMonth = new Date(ano, mes + 1, 0).getDate();
+        const day = Math.min(originalDay, daysInTargetMonth);
+        const overriddenDate = `${targetAno}-${targetMesStr}-${String(day).padStart(2, '0')}`;
+
+        return {
+          descricao: t.descricao,
+          valor: t.valor,
+          data: overriddenDate,
+          tipo: t.tipo,
+          categoria: t.categoria,
+          forma_pagamento: t.forma_pagamento || null,
+          parcela_atual: t.parcela_atual || null,
+          parcelas_total: t.parcelas_total || null,
+          user_id: user.id,
+        };
+      });
 
       const { error } = await supabase.from('transacoes').insert(rows);
       if (error) throw error;
@@ -136,6 +176,58 @@ export default function ImportarLancamentos() {
 
       {/* Input area */}
       <Card className="p-4 bg-card border-border space-y-4">
+
+        {/* Payment mode toggle */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tipo de importação</p>
+          <div className="flex bg-secondary rounded-lg p-0.5 h-10">
+            <button
+              type="button"
+              onClick={() => handleImportModeChange('pix')}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-md text-xs font-medium transition-all ${
+                importMode === 'pix'
+                  ? 'bg-success/20 text-success'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Banknote className="w-3.5 h-3.5" />
+              Pix / Débito
+            </button>
+            <button
+              type="button"
+              onClick={() => handleImportModeChange('cartao')}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-md text-xs font-medium transition-all ${
+                importMode === 'cartao'
+                  ? 'bg-blue-500/20 text-blue-400'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              Cartão de crédito
+            </button>
+          </div>
+          {importMode === 'cartao' && (
+            <p className="text-xs text-blue-400/80">
+              Despesas no cartão entram no mês seguinte (quando a fatura é paga)
+            </p>
+          )}
+        </div>
+
+        {/* Month selector */}
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Mês de referência</p>
+          <Select value={targetMonth} onValueChange={setTargetMonth}>
+            <SelectTrigger className="bg-secondary border-border h-10 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -267,7 +359,7 @@ export default function ImportarLancamentos() {
             ) : (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                Salvar {selectedCount} transações
+                Salvar {selectedCount} transações em {monthOptions.find(m => m.value === targetMonth)?.label}
               </>
             )}
           </Button>

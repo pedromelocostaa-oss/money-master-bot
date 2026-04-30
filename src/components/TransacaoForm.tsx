@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 
 export default function TransacaoForm() {
   const addMutation = useAddTransacao();
@@ -34,6 +34,22 @@ export default function TransacaoForm() {
 
   const categorias = tab === 'gasto' ? CATEGORIAS_GASTO : CATEGORIAS_RECEITA;
   const isCartao = formaPagamento === 'Cartão de crédito';
+
+  const handleFormaPagamentoChange = (v: string) => {
+    const wasCartao = formaPagamento === 'Cartão de crédito';
+    const isNowCartao = v === 'Cartão de crédito';
+
+    setFormaPagamento(v);
+    if (v !== 'Cartão de crédito') setCartaoId('');
+
+    if (isNowCartao && !wasCartao) {
+      // Avança a data para o mês seguinte ao selecionar cartão de crédito
+      setData(format(addMonths(new Date(), 1), 'yyyy-MM-dd'));
+    } else if (!isNowCartao && wasCartao) {
+      // Volta para hoje ao trocar para outro meio de pagamento
+      setData(format(new Date(), 'yyyy-MM-dd'));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +92,7 @@ export default function TransacaoForm() {
           setCartaoId('');
           setIsParcelado(false);
           setIsRecorrente(false);
+          setData(format(new Date(), 'yyyy-MM-dd'));
         },
       }
     );
@@ -83,7 +100,7 @@ export default function TransacaoForm() {
 
   return (
     <Card className="p-4 md:p-5 bg-card border-border">
-      <Tabs value={tab} onValueChange={(v) => { setTab(v as 'gasto' | 'receita'); setCategoria(''); setIsParcelado(false); setIsRecorrente(false); setCartaoId(''); }}>
+      <Tabs value={tab} onValueChange={(v) => { setTab(v as 'gasto' | 'receita'); setCategoria(''); setIsParcelado(false); setIsRecorrente(false); setCartaoId(''); setFormaPagamento(''); setData(format(new Date(), 'yyyy-MM-dd')); }}>
         <TabsList className="bg-secondary mb-4">
           <TabsTrigger value="gasto">Novo Gasto</TabsTrigger>
           <TabsTrigger value="receita">Nova Receita</TabsTrigger>
@@ -144,7 +161,7 @@ export default function TransacaoForm() {
           {tab === 'gasto' && (
             <div className="space-y-2">
               <Label className="text-foreground">Forma de pagamento</Label>
-              <Select value={formaPagamento} onValueChange={(v) => { setFormaPagamento(v); if (v !== 'Cartão de crédito') setCartaoId(''); }}>
+              <Select value={formaPagamento} onValueChange={handleFormaPagamentoChange}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -174,7 +191,9 @@ export default function TransacaoForm() {
           )}
 
           <div className="space-y-2">
-            <Label className="text-foreground">Data</Label>
+            <Label className="text-foreground">
+              Data{isCartao && <span className="text-blue-400 text-xs ml-1">(mês da fatura)</span>}
+            </Label>
             <Input
               type="date"
               value={data}
@@ -182,6 +201,11 @@ export default function TransacaoForm() {
               required
               className="bg-secondary border-border"
             />
+            {isCartao && (
+              <p className="text-[11px] text-blue-400/80">
+                Avançado para o mês seguinte — quando a fatura será paga
+              </p>
+            )}
           </div>
 
           {/* Parcelamento (only for expenses) */}

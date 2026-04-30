@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Check, Trash2, X, Maximize2, Minimize2 } from 'lucide-react';
+import { Sparkles, Check, Trash2, X, Maximize2, Minimize2, CreditCard, Banknote } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import { format } from 'date-fns';
@@ -60,8 +60,17 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
 
   const monthOptions = useMemo(() => buildMonthOptions(), []);
   const currentMonthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthValue = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const [importMode, setImportMode] = useState<'pix' | 'cartao'>('pix');
   const [targetMonth, setTargetMonth] = useState(currentMonthValue);
   const [tipoOverride, setTipoOverride] = useState<'auto' | 'gasto' | 'receita'>('auto');
+
+  const handleImportModeChange = (mode: 'pix' | 'cartao') => {
+    setImportMode(mode);
+    setTargetMonth(mode === 'cartao' ? nextMonthValue : currentMonthValue);
+  };
 
   const handleParse = async () => {
     if (!texto.trim()) {
@@ -128,7 +137,6 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
     setSaving(true);
     try {
       const rows = selected.map(t => {
-        // Override date to target month, keeping original day if valid
         const originalDay = new Date(t.data + 'T12:00:00').getDate();
         const daysInTargetMonth = new Date(ano, mes + 1, 0).getDate();
         const day = Math.min(originalDay, daysInTargetMonth);
@@ -179,6 +187,42 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
         <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground hover:text-foreground -mr-2">
           <X className="w-4 h-4" />
         </Button>
+      </div>
+
+      {/* Payment mode toggle */}
+      <div className="space-y-1">
+        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Tipo de importação</p>
+        <div className="flex bg-secondary rounded-lg p-0.5 h-9">
+          <button
+            type="button"
+            onClick={() => handleImportModeChange('pix')}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md text-[11px] font-medium transition-all ${
+              importMode === 'pix'
+                ? 'bg-success/20 text-success'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Banknote className="w-3 h-3" />
+            Pix / Débito
+          </button>
+          <button
+            type="button"
+            onClick={() => handleImportModeChange('cartao')}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md text-[11px] font-medium transition-all ${
+              importMode === 'cartao'
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <CreditCard className="w-3 h-3" />
+            Cartão de crédito
+          </button>
+        </div>
+        {importMode === 'cartao' && (
+          <p className="text-[10px] text-blue-400/80">
+            Despesas no cartão entram no mês seguinte (quando a fatura é paga)
+          </p>
+        )}
       </div>
 
       {/* Month & type selectors */}
