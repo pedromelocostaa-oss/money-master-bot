@@ -16,6 +16,8 @@ import {
   LogOut, Bot, Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logoNavbar from '@/assets/fincontrol-navbar.svg';
+import logoFavicon from '/favicon.svg';
 
 const items = [
   { title: 'Dashboard',   url: '/',            icon: LayoutDashboard },
@@ -37,14 +39,11 @@ export function AppSidebar() {
       className="border-r border-border/60 bg-sidebar/90 backdrop-blur-2xl"
     >
       {/* Logo */}
-      <div className="p-4 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-[10px] bg-primary flex items-center justify-center shrink-0 shadow-glow-blue">
-          <TrendingUp className="w-4 h-4 text-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <span className="font-display font-bold text-foreground text-[17px] tracking-tight">
-            FinControl
-          </span>
+      <div className="p-4 flex items-center justify-center min-h-[56px]">
+        {collapsed ? (
+          <img src={logoFavicon} alt="FinControl" className="w-8 h-8" />
+        ) : (
+          <img src={logoNavbar} alt="FinControl" className="h-8 w-auto" />
         )}
       </div>
 

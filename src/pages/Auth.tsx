@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, TrendingUp, ArrowRight, ArrowLeft, Bot, BarChart2 } from 'lucide-react';
+import logoFull from '@/assets/fincontrol-logo.svg';
 
 type Mode = 'login' | 'signup' | 'forgot';
 
@@ -48,13 +49,8 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-[44%] flex-col justify-center px-14 py-16 bg-card border-r border-border/60">
 
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-14">
-          <div className="w-11 h-11 rounded-[13px] bg-primary flex items-center justify-center shadow-apple-sm">
-            <TrendingUp className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-            FinControl
-          </h1>
+        <div className="mb-14">
+          <img src={logoFull} alt="FinControl - Finanças Pessoais" className="h-14 w-auto" />
         </div>
 
         {/* Headline */}
@@ -87,13 +83,8 @@ export default function Auth() {
         <div className="w-full max-w-[348px] animate-slide-up">
 
           {/* Logo mobile */}
-          <div className="flex items-center justify-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 rounded-[12px] bg-primary flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-              FinControl
-            </h1>
+          <div className="flex items-center justify-center mb-8 lg:hidden">
+            <img src={logoFull} alt="FinControl" className="h-12 w-auto" />
           </div>
 
           {/* Voltar (modo forgot) */}
