@@ -1,9 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="260" height="60" viewBox="0 0 260 60" fill="none">
-  <path d="M6 48 Q18 22 36 18 Q54 14 60 6" stroke="#0A0F0D" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.15"/>
-  <path d="M6 48 Q20 28 38 22 Q52 18 60 10" stroke="#1A8A5A" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <circle cx="60" cy="10" r="4" fill="#1A8A5A"/>
-  <circle cx="6" cy="48" r="2" fill="#0A0F0D" opacity="0.2"/>
-  <text x="80" y="28" font-family="Plus Jakarta Sans, sans-serif" font-size="24" font-weight="200" fill="#0A0F0D" letter-spacing="2">Fin</text>
-  <text x="116" y="28" font-family="Plus Jakarta Sans, sans-serif" font-size="24" font-weight="400" fill="#1A8A5A" letter-spacing="2">control</text>
-  <text x="80" y="46" font-family="Plus Jakarta Sans, sans-serif" font-size="9.5" font-weight="300" fill="#8A9E95" letter-spacing="3.5">FINANÇAS PESSOAIS</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="276" height="64" viewBox="0 0 276 64" fill="none">
+  <defs>
+    <linearGradient id="b1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4ADE80"/><stop offset="100%" stop-color="#16A34A"/></linearGradient>
+    <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FB7185"/><stop offset="100%" stop-color="#E11D48"/></linearGradient>
+    <linearGradient id="b3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#1D4ED8"/></linearGradient>
+  </defs>
+  <rect x="4"  y="44" width="13" height="18" rx="3.5" fill="url(#b1)"/>
+  <rect x="21" y="28" width="13" height="34" rx="3.5" fill="url(#b2)"/>
+  <rect x="38" y="10" width="13" height="52" rx="3.5" fill="url(#b3)"/>
+  <text x="68" y="32" font-family="Plus Jakarta Sans, sans-serif" font-size="25" font-weight="200" fill="#0A1628" letter-spacing="0.5">Fin</text>
+  <text x="104" y="32" font-family="Plus Jakarta Sans, sans-serif" font-size="25" font-weight="500" fill="#2196F3" letter-spacing="0.5">control</text>
+  <text x="68" y="50" font-family="Plus Jakarta Sans, sans-serif" font-size="9" font-weight="300" fill="#7BAFD4" letter-spacing="4">FINANÇAS PESSOAIS</text>
 </svg>
