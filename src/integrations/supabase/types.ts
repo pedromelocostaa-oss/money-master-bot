@@ -97,6 +97,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dividas: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          descricao: string | null
+          id: string
+          nome: string
+          pago: boolean
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          pago?: boolean
+          user_id: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          pago?: boolean
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       limites_categoria: {
         Row: {
           categoria: string
