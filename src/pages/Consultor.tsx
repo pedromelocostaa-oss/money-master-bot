@@ -132,14 +132,14 @@ export default function Consultor() {
         const { error } = await supabase.from('transacoes').insert({
           ...transacao,
           user_id: user.id,
-        });
+        } as any);
         if (error) throw error;
         toast.success('Transação criada!');
         addAssistantMsg(`✅ Lançamento **${transacao.descricao}** (${formatCurrency(transacao.valor)}) criado com sucesso!`);
 
       } else if (acao === 'atualizar') {
         if (!ids.length || !transacao) throw new Error('ID ou dados não informados para atualização');
-        const { error } = await supabase.from('transacoes').update(transacao).in('id', ids);
+        const { error } = await supabase.from('transacoes').update(transacao as any).in('id', ids);
         if (error) throw error;
         toast.success('Transação atualizada!');
         addAssistantMsg(`✅ Lançamento atualizado com sucesso!`);
