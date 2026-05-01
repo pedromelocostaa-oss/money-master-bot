@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      dividas: {
+        Row: {
+          id: string
+          user_id: string
+          nome: string
+          valor: number
+          data_vencimento: string
+          descricao: string | null
+          pago: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          nome: string
+          valor: number
+          data_vencimento: string
+          descricao?: string | null
+          pago?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          nome?: string
+          valor?: number
+          data_vencimento?: string
+          descricao?: string | null
+          pago?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       cartoes: {
         Row: {
           bandeira: string | null

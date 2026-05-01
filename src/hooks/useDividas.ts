@@ -29,7 +29,7 @@ export function useDividas() {
   return useQuery({
     queryKey: ['dividas', user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from(TABLE)
         .select('*')
         .eq('user_id', user!.id)
@@ -47,7 +47,7 @@ export function useAddDivida() {
   return useMutation({
     mutationFn: async (payload: DividaInsert) => {
       if (!user) throw new Error('Não autenticado');
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from(TABLE)
         .insert({ ...payload, user_id: user.id });
       if (error) throw error;
@@ -64,7 +64,7 @@ export function useToggleDividaPaga() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, pago }: { id: string; pago: boolean }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from(TABLE)
         .update({ pago })
         .eq('id', id);
@@ -81,7 +81,7 @@ export function useDeleteDivida() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from(TABLE).delete().eq('id', id);
+      const { error } = await supabase.from(TABLE).delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
