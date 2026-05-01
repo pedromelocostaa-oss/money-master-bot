@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Receipt, Layers, TrendingUp,
-  LogOut, Bot, Wallet,
+  LogOut, Bot, Wallet, Sun, Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks/useTheme';
 import logoNavbar from '@/assets/fincontrol-navbar.svg';
 import logoFavicon from '/favicon.svg';
 
@@ -32,6 +33,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const { signOut, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <Sidebar
@@ -71,12 +73,28 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-border/50">
+      <SidebarFooter className="p-3 border-t border-border/50 space-y-1">
         {!collapsed && user && (
           <p className="text-[11px] text-muted-foreground/60 truncate mb-1.5 px-2">
             {user.email}
           </p>
         )}
+        <Button
+          variant="ghost"
+          size={collapsed ? 'icon' : 'default'}
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          className="w-full justify-start text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-[10px] transition-colors"
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-[17px] w-[17px]" />
+          ) : (
+            <Moon className="h-[17px] w-[17px]" />
+          )}
+          {!collapsed && (
+            <span className="ml-2">{theme === 'dark' ? 'Tema claro' : 'Tema escuro'}</span>
+          )}
+        </Button>
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'default'}
