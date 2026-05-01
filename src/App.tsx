@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { HideValuesProvider } from "@/hooks/useHideValues";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -44,25 +45,27 @@ function AuthRoute() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Sonner />
-      <AuthProvider>
-        <HideValuesProvider>
-          <BrowserRouter>
-            <Routes>
-            <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
-            <Route path="/contas" element={<ProtectedRoute><Contas /></ProtectedRoute>} />
-            <Route path="/categorias" element={<ProtectedRoute><Categorias /></ProtectedRoute>} />
-            <Route path="/projecao" element={<ProtectedRoute><Projecao /></ProtectedRoute>} />
-            <Route path="/consultor" element={<ProtectedRoute><Consultor /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </HideValuesProvider>
-      </AuthProvider>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Sonner />
+        <AuthProvider>
+          <HideValuesProvider>
+            <BrowserRouter>
+              <Routes>
+              <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
+              <Route path="/contas" element={<ProtectedRoute><Contas /></ProtectedRoute>} />
+              <Route path="/categorias" element={<ProtectedRoute><Categorias /></ProtectedRoute>} />
+              <Route path="/projecao" element={<ProtectedRoute><Projecao /></ProtectedRoute>} />
+              <Route path="/consultor" element={<ProtectedRoute><Consultor /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </HideValuesProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
