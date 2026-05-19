@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
-import logoNavbar from '@/assets/fincontrol-navbar.svg';
-import logoFavicon from '/favicon.svg';
+import { PlmccWordmark } from '@/components/PlmccWordmark';
+import { PlmccMark } from '@/components/PlmccMark';
 
 const items = [
   { title: 'Dashboard',   url: '/',            icon: LayoutDashboard },
@@ -43,9 +43,9 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="p-4 flex items-center justify-center min-h-[56px]">
         {collapsed ? (
-          <img src={logoFavicon} alt="FinControl" className="w-8 h-8" />
+          <PlmccMark size={32} style={{ color: '#E58430' }} />
         ) : (
-          <img src={logoNavbar} alt="FinControl" className="h-8 w-auto" />
+          <PlmccWordmark size={38} color="#E58430" />
         )}
       </div>
 

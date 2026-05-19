@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, TrendingUp, ArrowRight, ArrowLeft, Bot, BarChart2 } from 'lucide-react';
-import logoFull from '@/assets/fincontrol-logo.svg';
+import { PlmccWordmark } from '@/components/PlmccWordmark';
 
 type Mode = 'login' | 'signup' | 'forgot';
 
@@ -50,7 +50,7 @@ export default function Auth() {
 
         {/* Logo */}
         <div className="mb-14">
-          <img src={logoFull} alt="FinControl - Finanças Pessoais" className="h-14 w-auto" />
+          <PlmccWordmark size={52} color="#C46A1F" />
         </div>
 
         {/* Headline */}
@@ -84,7 +84,7 @@ export default function Auth() {
 
           {/* Logo mobile */}
           <div className="flex items-center justify-center mb-8 lg:hidden">
-            <img src={logoFull} alt="FinControl" className="h-12 w-auto" />
+            <PlmccWordmark size={44} color="#C46A1F" />
           </div>
 
           {/* Voltar (modo forgot) */}

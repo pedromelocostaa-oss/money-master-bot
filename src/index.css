@@ -65,6 +65,13 @@
     --apple-red:     4 90% 58%;
     --apple-orange:  35 100% 50%;
     --apple-blue:    211 100% 50%;
+
+    /* PLMCC Brand */
+    --brand-amber:        #E58430;
+    --brand-amber-deep:   #C46A1F;
+    --brand-ink:          #1c1813;
+    --brand-paper:        #F4ECDE;
+    --brand-bg-dark:      #14110d;
     --apple-purple:  280 68% 60%;
     --apple-teal:    199 77% 55%;
 
