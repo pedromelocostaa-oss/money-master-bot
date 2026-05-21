@@ -19,10 +19,10 @@ export function PlmccWordmark({ size = 36, color = '#E58430', className }: Wordm
       aria-label="PLMCC"
     >
       <span style={{
-        fontFamily: "'Caveat', cursive",
-        fontWeight: 600,
+        fontFamily: "'Nunito', sans-serif",
+        fontWeight: 900,
         fontSize: size,
-        letterSpacing: '-1px',
+        letterSpacing: '-0.5px',
       }}>
         Plm
       </span>

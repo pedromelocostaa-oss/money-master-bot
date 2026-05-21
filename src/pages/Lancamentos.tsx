@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download, HandCoins, CheckCircle2, Clock, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download, HandCoins, CheckCircle2, Clock, AlertTriangle, ChevronDown, UserPlus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,7 @@ import TransacaoForm from '@/components/TransacaoForm';
 import DividaForm from '@/components/DividaForm';
 import ImportarTexto from '@/components/ImportarTexto';
 import EditTransacaoDialog from '@/components/EditTransacaoDialog';
+import CobrarDialog from '@/components/CobrarDialog';
 
 type SortOrder = 'desc' | 'asc' | 'value-desc' | 'value-asc';
 
@@ -45,6 +46,7 @@ export default function Lancamentos() {
   const [showDividaForm, setShowDividaForm] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Transacao | null>(null);
+  const [cobrandoTransacao, setCobrandoTransacao] = useState<Transacao | null>(null);
 
   const { data: transacoes, isLoading } = useTransacoes(filterMes, filterAno);
   const { data: contas } = useContas();
@@ -438,6 +440,16 @@ export default function Lancamentos() {
                             {t.tipo === 'receita' ? '+' : '-'}{formatCurrency(Number(t.valor))}
                           </span>
                           <div className="flex shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {t.tipo === 'gasto' && (
+                              <Button
+                                variant="ghost" size="icon"
+                                onClick={() => setCobrandoTransacao(t)}
+                                className="text-muted-foreground hover:text-amber-400 h-7 w-7"
+                                title="Cobrar alguém por este gasto"
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost" size="icon"
                               onClick={() => setEditing(t)}
@@ -580,6 +592,11 @@ export default function Lancamentos() {
         transacao={editing}
         open={!!editing}
         onOpenChange={(o) => !o && setEditing(null)}
+      />
+      <CobrarDialog
+        transacao={cobrandoTransacao}
+        open={!!cobrandoTransacao}
+        onOpenChange={(o) => !o && setCobrandoTransacao(null)}
       />
     </div>
   );

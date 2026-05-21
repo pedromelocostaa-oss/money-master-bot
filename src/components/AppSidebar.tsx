@@ -47,9 +47,9 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="p-4 flex items-center justify-center min-h-[56px]">
         {collapsed ? (
-          <PlmccMark size={32} style={{ color: '#E58430' }} />
+          <PlmccMark size={32} style={{ color: '#007AFF' }} />
         ) : (
-          <PlmccWordmark size={38} color="#E58430" />
+          <PlmccWordmark size={38} color="#007AFF" />
         )}
       </div>
 
