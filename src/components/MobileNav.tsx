@@ -1,5 +1,5 @@
 import { NavLink as RRNavLink } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Bot, Wallet, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Receipt, Bot, Wallet, TrendingUp, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
@@ -41,6 +41,17 @@ export function MobileNav() {
             )}
           </RRNavLink>
         ))}
+        <a
+          href="https://pedro-hq-workbench.lovable.app/shopping"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all min-w-[52px] text-muted-foreground active:scale-95"
+        >
+          <div className="p-1.5 rounded-[10px]">
+            <ShoppingCart className="h-4.5 w-4.5" />
+          </div>
+          <span>Tarefas</span>
+        </a>
       </div>
     </nav>
   );

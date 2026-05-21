@@ -148,6 +148,33 @@ export function useDeleteTransacoes() {
   });
 }
 
+export function useDeleteFutureTransacoes() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ descricao, fromData }: { descricao: string; fromData: string }) => {
+      if (!user) throw new Error('Não autenticado');
+      const { error } = await supabase
+        .from('transacoes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('descricao', descricao)
+        .gte('data', fromData);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transacoes'] });
+      queryClient.invalidateQueries({ queryKey: ['transacoes-6meses'] });
+      queryClient.invalidateQueries({ queryKey: ['saldos-contas'] });
+      toast.success('Transações futuras removidas!');
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Erro ao remover transações');
+    },
+  });
+}
+
 export function useUpdateTransacao() {
   const queryClient = useQueryClient();
 

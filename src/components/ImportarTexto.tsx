@@ -137,7 +137,8 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
     setSaving(true);
     try {
       const rows = selected.map(t => {
-        const originalDay = new Date(t.data + 'T12:00:00').getDate();
+        const parsedDate = t.data ? new Date(t.data + 'T12:00:00') : null;
+        const originalDay = parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate.getDate() : 1;
         const daysInTargetMonth = new Date(ano, mes + 1, 0).getDate();
         const day = Math.min(originalDay, daysInTargetMonth);
         const overriddenDate = `${targetAno}-${targetMesStr}-${String(day).padStart(2, '0')}`;

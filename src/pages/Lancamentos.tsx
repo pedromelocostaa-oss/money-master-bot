@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useTransacoes, useDeleteTransacao, useDeleteTransacoes, type Transacao } from '@/hooks/useFinancas';
+import { useTransacoes, useDeleteTransacao, useDeleteTransacoes, useDeleteFutureTransacoes, type Transacao } from '@/hooks/useFinancas';
 import { useContas, useCartoes } from '@/hooks/useContas';
 import { useDividas, useToggleDividaPaga, useDeleteDivida } from '@/hooks/useDividas';
 import { CATEGORIA_CORES } from '@/lib/constants';
@@ -11,7 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download, HandCoins, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Trash2, Upload, Plus, ChevronUp, Receipt, ChevronLeft, ChevronRight, Search, ArrowUp, ArrowDown, ArrowUpDown, Pencil, X, Download, HandCoins, CheckCircle2, Clock, AlertTriangle, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TransacaoForm from '@/components/TransacaoForm';
@@ -46,6 +52,7 @@ export default function Lancamentos() {
   const { data: dividas, isLoading: loadingDividas } = useDividas();
   const deleteMutation = useDeleteTransacao();
   const deleteManyMutation = useDeleteTransacoes();
+  const deleteFutureMutation = useDeleteFutureTransacoes();
   const togglePagaMutation = useToggleDividaPaga();
   const deleteDividaMutation = useDeleteDivida();
 
@@ -438,14 +445,47 @@ export default function Lancamentos() {
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost" size="icon"
-                              onClick={() => deleteMutation.mutate(t.id)}
-                              disabled={deleteMutation.isPending}
-                              className="text-muted-foreground hover:text-destructive h-7 w-7"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            {t.parcelas_total && t.parcelas_total > 1 ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost" size="icon"
+                                    disabled={deleteMutation.isPending || deleteFutureMutation.isPending}
+                                    className="text-muted-foreground hover:text-destructive h-7 w-7"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="text-xs">
+                                  <DropdownMenuItem
+                                    onClick={() => deleteMutation.mutate(t.id)}
+                                    className="text-xs gap-2"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Excluir somente esta
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      if (!confirm(`Excluir "${t.descricao}" desta data em diante?`)) return;
+                                      deleteFutureMutation.mutate({ descricao: t.descricao, fromData: t.data });
+                                    }}
+                                    className="text-xs gap-2 text-destructive focus:text-destructive"
+                                  >
+                                    <ChevronDown className="w-3 h-3" />
+                                    Excluir esta e todas as futuras
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <Button
+                                variant="ghost" size="icon"
+                                onClick={() => deleteMutation.mutate(t.id)}
+                                disabled={deleteMutation.isPending}
+                                className="text-muted-foreground hover:text-destructive h-7 w-7"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>

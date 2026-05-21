@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Receipt, Layers, TrendingUp,
-  LogOut, Bot, Wallet, Sun, Moon,
+  LogOut, Bot, Wallet, Sun, Moon, ShoppingCart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
@@ -27,6 +27,10 @@ const items = [
   { title: 'Consultor IA',url: '/consultor',   icon: Bot },
   { title: 'Categorias',  url: '/categorias',  icon: Layers },
   { title: 'Projeção',    url: '/projecao',    icon: TrendingUp },
+];
+
+const externalItems = [
+  { title: 'Tarefas', href: 'https://pedro-hq-workbench.lovable.app/shopping', icon: ShoppingCart },
 ];
 
 export function AppSidebar() {
@@ -65,6 +69,21 @@ export function AppSidebar() {
                       <item.icon className="w-[17px] h-[17px] shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              {externalItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                      <item.icon className="w-[17px] h-[17px] shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
