@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Check, Trash2, X, Maximize2, Minimize2, CreditCard, Banknote } from 'lucide-react';
+import { Sparkles, Check, Trash2, X, Maximize2, Minimize2, CreditCard, Banknote, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/lib/formatters';
 import { CATEGORIA_CORES } from '@/lib/constants';
 import { format } from 'date-fns';
@@ -229,7 +230,19 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
       {/* Month & type selectors */}
       <div className="flex flex-wrap gap-3">
         <div className="flex-1 min-w-[160px] space-y-1">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Mês de referência</p>
+          <div className="flex items-center gap-1">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Mês de referência</p>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-3 h-3 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs leading-relaxed">
+                  O mês em que esses gastos serão registrados no seu controle financeiro. O dia é preservado do texto original, mas o mês e ano são substituídos pelo valor selecionado aqui. No cartão de crédito, selecione o mês da fatura (geralmente o mês seguinte às compras).
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Select value={targetMonth} onValueChange={setTargetMonth}>
             <SelectTrigger className="bg-secondary border-border h-9 text-xs">
               <SelectValue />
