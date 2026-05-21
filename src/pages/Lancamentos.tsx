@@ -198,6 +198,23 @@ export default function Lancamentos() {
     setShowDividaForm(false);
   };
 
+  // Map de dívidas vinculadas a transações (via "Referente a: <descricao>")
+  const dividasPorDescricao = useMemo(() => {
+    const map = new Map<string, typeof dividas extends (infer U)[] | undefined ? U : never>();
+    if (!dividas) return map;
+    dividas.forEach(d => {
+      if (d.descricao?.startsWith('Referente a: ')) {
+        const key = d.descricao.replace('Referente a: ', '');
+        const existing = map.get(key);
+        // Prioriza a dívida não paga; se já tem uma não paga, mantém
+        if (!existing || (!d.pago && existing.pago)) {
+          map.set(key, d);
+        }
+      }
+    });
+    return map;
+  }, [dividas]);
+
   const dividasPendentes = (dividas || []).filter(d => !d.pago);
   const hoje = format(now, 'yyyy-MM-dd');
 
@@ -400,12 +417,13 @@ export default function Lancamentos() {
                     const isSel = selected.has(t.id);
                     const conta = contaNome((t as any).conta_id);
                     const cartao = cartaoNome((t as any).cartao_id);
+                    const linkedDivida = dividasPorDescricao.get(t.descricao);
                     return (
                       <div key={t.id}>
                         {i > 0 && <div className="h-px bg-border/50 mx-4" />}
                         <div
                           className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors group ${
-                            isSel ? 'bg-primary/5' : ''
+                            isSel ? 'bg-primary/5' : linkedDivida && !linkedDivida.pago ? 'bg-amber-500/[0.04]' : ''
                           }`}
                         >
                           <Checkbox
@@ -433,6 +451,25 @@ export default function Lancamentos() {
                               {cartao ? ` · ${cartao}` : t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
                               {conta ? ` · ${conta}` : ''}
                             </p>
+                            {linkedDivida && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <UserPlus className={`w-3 h-3 shrink-0 ${linkedDivida.pago ? 'text-success/60' : 'text-amber-400'}`} />
+                                <span className={`text-[10px] font-medium ${linkedDivida.pago ? 'text-success/70' : 'text-amber-400'}`}>
+                                  {linkedDivida.nome}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/60">·</span>
+                                <span className={`text-[10px] font-semibold tabular-nums ${linkedDivida.pago ? 'text-success/70' : 'text-amber-400'}`}>
+                                  {formatCurrency(Number(linkedDivida.valor))}
+                                </span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  linkedDivida.pago
+                                    ? 'bg-success/10 text-success/70'
+                                    : 'bg-amber-500/15 text-amber-400'
+                                }`}>
+                                  {linkedDivida.pago ? 'Pago' : 'Pendente'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <span className={`text-[15px] font-semibold shrink-0 tabular-nums ${
                             t.tipo === 'receita' ? 'text-success' : 'text-foreground'
