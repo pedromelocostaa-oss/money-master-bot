@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTransacoes } from '@/hooks/useFinancas';
 import { formatCurrency } from '@/lib/formatters';
@@ -25,12 +25,13 @@ import type { Transacao } from '@/hooks/useFinancas';
 type ViewMode = 'range' | 'month';
 type RangeOption = '3m' | '6m' | '1y';
 
-function MetricCard({ title, value, icon: Icon, variant, subtitle, onClick }: {
+function MetricCard({ title, value, icon: Icon, variant, subtitle, badge, onClick }: {
   title: string;
   value: string;
   icon: any;
   variant: 'success' | 'destructive' | 'default' | 'warning';
   subtitle?: string;
+  badge?: React.ReactNode;
   onClick?: () => void;
 }) {
   const styles = {
@@ -55,6 +56,7 @@ function MetricCard({ title, value, icon: Icon, variant, subtitle, onClick }: {
       <p className={`text-xl md:text-2xl font-display font-bold ${s.text} tracking-tight`}>
         {value}
       </p>
+      {badge}
       {subtitle && <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>}
     </Card>
   );
@@ -159,6 +161,18 @@ export default function Dashboard() {
     const gastos = prevMonthData.filter(t => t.tipo === 'gasto').reduce((s, t) => s + Number(t.valor), 0);
     return { receitas, gastos };
   }, [prevMonthData]);
+
+  // Valor pendente a receber referente a gastos DO MÊS SELECIONADO
+  const aReceberDoMes = useMemo(() => {
+    if (!dividas || !monthData || viewMode !== 'month') return 0;
+    const descricoesMes = new Set(
+      monthData.filter(t => t.tipo === 'gasto').map(t => t.descricao)
+    );
+    return dividas
+      .filter(d => !d.pago && d.descricao?.startsWith('Referente a: '))
+      .filter(d => descricoesMes.has(d.descricao!.replace('Referente a: ', '')))
+      .reduce((s, d) => s + Number(d.valor), 0);
+  }, [dividas, monthData, viewMode]);
 
   const barData = useMemo(() => {
     if (!activeData) return [];
@@ -357,14 +371,17 @@ export default function Dashboard() {
       {/* Patrimônio total (todas as contas) */}
       <PatrimonioCard />
 
-      {/* Dívidas a Receber */}
+      {/* A Receber — dívidas pendentes de cobranças */}
       {(() => {
         const pendentes = (dividas || []).filter(d => !d.pago);
         const total = pendentes.reduce((s, d) => s + Number(d.valor), 0);
         const vencidas = pendentes.filter(d => d.data_vencimento < new Date().toISOString().slice(0,10)).length;
-        if (!dividas || dividas.length === 0) return null;
+        if (!dividas || pendentes.length === 0) return null;
         return (
-          <Card className="p-4 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors cursor-pointer" onClick={() => navigate('/lancamentos')}>
+          <Card
+            className="p-4 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors cursor-pointer"
+            onClick={() => navigate('/lancamentos')}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
                 <HandCoins className="w-5 h-5 text-amber-400" />
@@ -372,6 +389,7 @@ export default function Dashboard() {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">A Receber</p>
                 <p className="text-xl font-display font-bold text-amber-400 mt-0.5">{mask(formatCurrency(total))}</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-0.5">Sendo abatido dos gastos do mês</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs text-muted-foreground">{pendentes.length} pendente{pendentes.length !== 1 ? 's' : ''}</p>
@@ -393,19 +411,29 @@ export default function Dashboard() {
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=receita`)}
         />
         <MetricCard
-          title="Gastos"
-          value={mask(formatCurrency(metrics.gastos))}
+          title="Meu custo"
+          value={mask(formatCurrency(Math.max(0, metrics.gastos - aReceberDoMes)))}
           icon={ArrowDownRight}
           variant="destructive"
-          subtitle={gastosDelta || undefined}
+          badge={aReceberDoMes > 0 && viewMode === 'month' ? (
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <span className="text-[10px] text-muted-foreground/60 line-through tabular-nums">
+                {mask(formatCurrency(metrics.gastos))}
+              </span>
+              <span className="text-[10px] bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full font-medium tabular-nums">
+                −{mask(formatCurrency(aReceberDoMes))} a receber
+              </span>
+            </div>
+          ) : undefined}
+          subtitle={aReceberDoMes === 0 ? (gastosDelta || undefined) : undefined}
           onClick={() => navigate(`/lancamentos?mes=${selectedMes}&ano=${selectedAno}&tipo=gasto`)}
         />
         <MetricCard
           title="Resultado do mês"
-          value={mask(formatCurrency(metrics.saldo))}
+          value={mask(formatCurrency(metrics.receitas - Math.max(0, metrics.gastos - aReceberDoMes)))}
           icon={Wallet}
-          variant={metrics.saldo >= 0 ? 'success' : 'destructive'}
-          subtitle={metrics.saldo >= 0 ? 'Receitas − gastos (positivo)' : 'Receitas − gastos (negativo)'}
+          variant={(metrics.receitas - Math.max(0, metrics.gastos - aReceberDoMes)) >= 0 ? 'success' : 'destructive'}
+          subtitle={(metrics.receitas - Math.max(0, metrics.gastos - aReceberDoMes)) >= 0 ? 'Receitas − meu custo (positivo)' : 'Receitas − meu custo (negativo)'}
         />
         <MetricCard
           title="Comprometido"
