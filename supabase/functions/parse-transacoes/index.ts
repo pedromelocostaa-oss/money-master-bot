@@ -36,71 +36,92 @@ Regras:
 - parcela_atual e parcelas_total: preencha se houver informação de parcelas (ex: "Parcela 2 de 5" → parcela_atual: 2, parcelas_total: 5)
 - Se um valor for negativo no texto (estorno/cancelamento), marque como tipo "receita" com valor positivo`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: texto },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_transactions",
-              description: "Retorna as transações extraídas do texto",
-              parameters: {
-                type: "object",
-                properties: {
-                  transacoes: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        descricao: { type: "string" },
-                        valor: { type: "number" },
-                        data: { type: "string", description: "YYYY-MM-DD" },
-                        tipo: { type: "string", enum: ["gasto", "receita"] },
-                        categoria: { type: "string" },
-                        forma_pagamento: { type: "string", nullable: true },
-                        parcela_atual: { type: "number", nullable: true },
-                        parcelas_total: { type: "number", nullable: true },
-                      },
-                      required: ["descricao", "valor", "data", "tipo", "categoria"],
+    const requestBody = JSON.stringify({
+      model: "google/gemini-2.0-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: texto },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "extract_transactions",
+            description: "Retorna as transações extraídas do texto",
+            parameters: {
+              type: "object",
+              properties: {
+                transacoes: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      descricao: { type: "string" },
+                      valor: { type: "number" },
+                      data: { type: "string", description: "YYYY-MM-DD" },
+                      tipo: { type: "string", enum: ["gasto", "receita"] },
+                      categoria: { type: "string" },
+                      forma_pagamento: { type: "string", nullable: true },
+                      parcela_atual: { type: "number", nullable: true },
+                      parcelas_total: { type: "number", nullable: true },
                     },
+                    required: ["descricao", "valor", "data", "tipo", "categoria"],
                   },
                 },
-                required: ["transacoes"],
               },
+              required: ["transacoes"],
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "extract_transactions" } },
-      }),
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "extract_transactions" } },
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      if (response.status === 429) {
+    let response: Response | null = null;
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: requestBody,
+      });
+
+      if (response.ok) break;
+
+      // 503/502/504 = gateway temporariamente indisponível, vale tentar de novo
+      const isRetryable = [502, 503, 504].includes(response.status);
+      if (!isRetryable || attempt === maxAttempts) break;
+
+      const delayMs = attempt * 1000;
+      console.error(`AI gateway error ${response.status}, retrying in ${delayMs}ms (attempt ${attempt}/${maxAttempts})`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (!response!.ok) {
+      const errText = await response!.text();
+      console.error("AI gateway error:", response!.status, errText);
+      if (response!.status === 429) {
         return new Response(JSON.stringify({ error: "Muitas requisições. Tente novamente em alguns segundos." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
+      if (response!.status === 402) {
         return new Response(JSON.stringify({ error: "Créditos insuficientes." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error("AI gateway error: " + response.status);
+      if ([502, 503, 504].includes(response!.status)) {
+        return new Response(JSON.stringify({ error: "Serviço de IA temporariamente indisponível. Tente novamente em instantes." }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error("AI gateway error: " + response!.status);
     }
 
-    const data = await response.json();
+    const data = await response!.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) throw new Error("No tool call in response");
 
