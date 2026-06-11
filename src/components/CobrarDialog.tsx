@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import CurrencyInput from '@/components/CurrencyInput';
 import { useAddDivida } from '@/hooks/useDividas';
 import { formatCurrency } from '@/lib/formatters';
@@ -21,6 +22,7 @@ export default function CobrarDialog({ transacao, open, onOpenChange }: Props) {
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<'total' | 'metade' | 'outro'>('total');
   const [valorCustom, setValorCustom] = useState('');
+  const [temPrazo, setTemPrazo] = useState(true);
 
   if (!transacao) return null;
 
@@ -34,12 +36,13 @@ export default function CobrarDialog({ transacao, open, onOpenChange }: Props) {
     setNome('');
     setTipo('total');
     setValorCustom('');
+    setTemPrazo(true);
     onOpenChange(false);
   };
 
   const handleSave = () => {
     if (!nome.trim() || valorCalculado <= 0) return;
-    const vencimento = format(addDays(new Date(transacao.data + 'T12:00:00'), 30), 'yyyy-MM-dd');
+    const vencimento = temPrazo ? format(addDays(new Date(transacao.data + 'T12:00:00'), 30), 'yyyy-MM-dd') : null;
     addDivida.mutate(
       {
         nome: nome.trim(),
@@ -114,8 +117,16 @@ export default function CobrarDialog({ transacao, open, onOpenChange }: Props) {
             )}
           </div>
 
+          {/* Prazo */}
+          <div className="flex items-center justify-between px-1">
+            <Label className="text-xs">Definir prazo de cobrança</Label>
+            <Switch checked={temPrazo} onCheckedChange={setTemPrazo} className="scale-90" />
+          </div>
+
           <p className="text-[11px] text-muted-foreground/60">
-            A dívida será criada com vencimento em 30 dias e aparecerá em "Dívidas a Receber".
+            {temPrazo
+              ? 'A dívida será criada com vencimento em 30 dias e aparecerá em "Dívidas a Receber".'
+              : 'A dívida será criada sem prazo de vencimento e aparecerá em "Dívidas a Receber".'}
           </p>
         </div>
 

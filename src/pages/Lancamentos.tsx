@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useTransacoes, useDeleteTransacao, useDeleteTransacoes, useDeleteFutureTransacoes, type Transacao } from '@/hooks/useFinancas';
+import { useTransacoes, useDeleteTransacao, useDeleteTransacoes, useDeleteFutureTransacoes, useUpdateTransacao, type Transacao } from '@/hooks/useFinancas';
 import { useContas, useCartoes } from '@/hooks/useContas';
 import { useDividas, useToggleDividaPaga, useDeleteDivida } from '@/hooks/useDividas';
-import { CATEGORIA_CORES } from '@/lib/constants';
+import { CATEGORIA_CORES, CATEGORIAS_GASTO, CATEGORIAS_RECEITA } from '@/lib/constants';
 import { formatCurrency } from '@/lib/formatters';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,7 @@ export default function Lancamentos() {
   const deleteMutation = useDeleteTransacao();
   const deleteManyMutation = useDeleteTransacoes();
   const deleteFutureMutation = useDeleteFutureTransacoes();
+  const updateMutation = useUpdateTransacao();
   const togglePagaMutation = useToggleDividaPaga();
   const deleteDividaMutation = useDeleteDivida();
 
@@ -446,11 +447,28 @@ export default function Lancamentos() {
                                 </span>
                               )}
                             </p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                              {t.categoria}
-                              {cartao ? ` · ${cartao}` : t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
-                              {conta ? ` · ${conta}` : ''}
-                            </p>
+                            <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground min-w-0">
+                              <Select
+                                value={t.categoria}
+                                onValueChange={(v) => updateMutation.mutate({ id: t.id, categoria: v })}
+                              >
+                                <SelectTrigger className="h-auto w-auto gap-0.5 border-0 bg-transparent p-0 text-[11px] text-muted-foreground hover:text-foreground focus:ring-0 focus:ring-offset-0 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:opacity-40 [&>span]:line-clamp-1 shrink-0">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(t.tipo === 'gasto' ? CATEGORIAS_GASTO : CATEGORIAS_RECEITA).map(c => (
+                                    <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <span className="truncate">
+                                {cartao ? ` · ${cartao}` : t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
+                                {conta ? ` · ${conta}` : ''}
+                                {(t as any).data_compra && (t as any).data_compra !== t.data && (
+                                  ` · Compra em ${format(new Date((t as any).data_compra + 'T12:00:00'), 'dd/MM')}`
+                                )}
+                              </span>
+                            </div>
                             {linkedDivida && (
                               <div className="flex items-center gap-1.5 mt-1">
                                 <UserPlus className={`w-3 h-3 shrink-0 ${linkedDivida.pago ? 'text-success/60' : 'text-amber-400'}`} />
@@ -574,7 +592,7 @@ export default function Lancamentos() {
         ) : (
           <div className="space-y-2">
             {dividas.map(d => {
-              const vencida = !d.pago && d.data_vencimento < hoje;
+              const vencida = !d.pago && !!d.data_vencimento && d.data_vencimento < hoje;
               const venceHoje = !d.pago && d.data_vencimento === hoje;
               return (
                 <Card
@@ -604,7 +622,11 @@ export default function Lancamentos() {
                       {d.descricao && <span className="text-[11px] text-muted-foreground truncate">{d.descricao}</span>}
                       <span className={`flex items-center gap-1 text-[10px] font-medium ${vencida ? 'text-destructive' : venceHoje ? 'text-warning' : 'text-muted-foreground'}`}>
                         {vencida ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        {d.pago ? 'Pago' : `Vence ${format(new Date(d.data_vencimento + 'T12:00:00'), "dd/MM/yy")}`}
+                        {d.pago
+                          ? 'Pago'
+                          : d.data_vencimento
+                          ? `Vence ${format(new Date(d.data_vencimento + 'T12:00:00'), "dd/MM/yy")}`
+                          : 'Sem prazo'}
                       </span>
                     </div>
                   </div>

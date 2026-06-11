@@ -149,30 +149,45 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
 
     setSaving(true);
     try {
-      const rows = selected.map(t => {
+      const rows = selected.flatMap(t => {
         const parsedDate = t.data ? new Date(t.data + 'T12:00:00') : null;
         const originalDay = parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate.getDate() : 1;
-        const daysInTargetMonth = new Date(ano, mes + 1, 0).getDate();
-        const day = Math.min(originalDay, daysInTargetMonth);
-        const overriddenDate = `${targetAno}-${targetMesStr}-${String(day).padStart(2, '0')}`;
+        const dataCompra = parsedDate && !isNaN(parsedDate.getTime())
+          ? `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`
+          : null;
 
-        return {
-          descricao: t.descricao,
-          valor: t.valor,
-          data: overriddenDate,
-          tipo: tipoOverride !== 'auto' ? tipoOverride : t.tipo,
-          categoria: t.categoria,
-          forma_pagamento: t.forma_pagamento || null,
-          parcela_atual: t.parcela_atual || null,
-          parcelas_total: t.parcelas_total || null,
-          user_id: user.id,
-        };
+        // Se for a 1ª parcela de uma compra parcelada, gera também as próximas parcelas nos meses seguintes
+        const parcelasRestantes = t.parcela_atual === 1 && t.parcelas_total && t.parcelas_total > 1
+          ? t.parcelas_total - 1
+          : 0;
+
+        return Array.from({ length: parcelasRestantes + 1 }, (_, i) => {
+          const refMes = mes + i;
+          const refAno = ano + Math.floor(refMes / 12);
+          const refMesNormalizado = ((refMes % 12) + 12) % 12;
+          const daysInRefMonth = new Date(refAno, refMesNormalizado + 1, 0).getDate();
+          const day = Math.min(originalDay, daysInRefMonth);
+          const overriddenDate = `${refAno}-${String(refMesNormalizado + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+          return {
+            descricao: t.descricao,
+            valor: t.valor,
+            data: overriddenDate,
+            data_compra: dataCompra && dataCompra !== overriddenDate ? dataCompra : null,
+            tipo: tipoOverride !== 'auto' ? tipoOverride : t.tipo,
+            categoria: t.categoria,
+            forma_pagamento: t.forma_pagamento || null,
+            parcela_atual: t.parcela_atual ? t.parcela_atual + i : null,
+            parcelas_total: t.parcelas_total || null,
+            user_id: user.id,
+          };
+        });
       });
 
       const { error } = await supabase.from('transacoes').insert(rows);
       if (error) throw error;
 
-      toast.success(`${selected.length} transações salvas!`);
+      toast.success(`${rows.length} transações salvas!`);
       setTransacoes([]);
       setTexto('');
       onClose();
@@ -390,6 +405,11 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
                       {tipoOverride !== 'auto' && (
                         <span className={`text-[10px] font-semibold ${tipoOverride === 'gasto' ? 'text-destructive' : 'text-success'}`}>
                           · {tipoOverride}
+                        </span>
+                      )}
+                      {t.parcela_atual === 1 && t.parcelas_total && t.parcelas_total > 1 && (
+                        <span className="text-[10px] text-blue-400/80">
+                          · próximas {t.parcelas_total - 1} parcelas serão criadas automaticamente
                         </span>
                       )}
                     </div>

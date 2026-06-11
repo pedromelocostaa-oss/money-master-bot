@@ -100,7 +100,7 @@ export type Database = {
       dividas: {
         Row: {
           created_at: string
-          data_vencimento: string
+          data_vencimento: string | null
           descricao: string | null
           id: string
           nome: string
@@ -110,7 +110,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          data_vencimento: string
+          data_vencimento?: string | null
           descricao?: string | null
           id?: string
           nome: string
@@ -120,7 +120,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          data_vencimento?: string
+          data_vencimento?: string | null
           descricao?: string | null
           id?: string
           nome?: string
@@ -158,6 +158,7 @@ export type Database = {
           conta_id: string | null
           created_at: string
           data: string
+          data_compra: string | null
           descricao: string
           forma_pagamento: string | null
           id: string
@@ -173,6 +174,7 @@ export type Database = {
           conta_id?: string | null
           created_at?: string
           data: string
+          data_compra?: string | null
           descricao: string
           forma_pagamento?: string | null
           id?: string
@@ -188,6 +190,7 @@ export type Database = {
           conta_id?: string | null
           created_at?: string
           data?: string
+          data_compra?: string | null
           descricao?: string
           forma_pagamento?: string | null
           id?: string

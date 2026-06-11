@@ -40,6 +40,7 @@ export default function TransacaoForm() {
   const [cobrarNome, setCobrarNome] = useState('');
   const [cobrarTipo, setCobrarTipo] = useState<'total' | 'metade' | 'outro'>('total');
   const [cobrarValorCustom, setCobrarValorCustom] = useState('');
+  const [cobrarTemPrazo, setCobrarTemPrazo] = useState(true);
 
   const categorias = tab === 'gasto' ? CATEGORIAS_GASTO : CATEGORIAS_RECEITA;
   const isCartao = formaPagamento === 'Cartão de crédito';
@@ -75,6 +76,7 @@ export default function TransacaoForm() {
     setCobrarNome('');
     setCobrarTipo('total');
     setCobrarValorCustom('');
+    setCobrarTemPrazo(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -109,7 +111,7 @@ export default function TransacaoForm() {
       {
         onSuccess: () => {
           if (shouldCobrar) {
-            const vencimento = format(addDays(new Date(data + 'T12:00:00'), 30), 'yyyy-MM-dd');
+            const vencimento = cobrarTemPrazo ? format(addDays(new Date(data + 'T12:00:00'), 30), 'yyyy-MM-dd') : null;
             addDividaMutation.mutate({
               nome: cobrarNome.trim(),
               valor: cobrarValorCalculado,
@@ -356,8 +358,14 @@ export default function TransacaoForm() {
                     </div>
                   </div>
 
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Definir prazo de cobrança (30 dias)</Label>
+                    <Switch checked={cobrarTemPrazo} onCheckedChange={setCobrarTemPrazo} className="scale-90" />
+                  </div>
+
                   <p className="text-[11px] text-muted-foreground/60">
-                    Uma dívida de <span className="text-amber-400 font-medium">{cobrarValorCalculado > 0 ? formatCurrency(cobrarValorCalculado) : '—'}</span> será criada automaticamente em "Dívidas a Receber" com vencimento em 30 dias.
+                    Uma dívida de <span className="text-amber-400 font-medium">{cobrarValorCalculado > 0 ? formatCurrency(cobrarValorCalculado) : '—'}</span> será criada automaticamente em "Dívidas a Receber"
+                    {cobrarTemPrazo ? ' com vencimento em 30 dias.' : ', sem prazo de vencimento.'}
                   </p>
                 </div>
               )}

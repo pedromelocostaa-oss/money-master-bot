@@ -5,30 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import CurrencyInput from '@/components/CurrencyInput';
 import { Loader2, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 export default function DividaForm() {
   const addMutation = useAddDivida();
   const [nome, setNome] = useState('');
   const [valor, setValor] = useState('');
-  const [dataVencimento, setDataVencimento] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [temPrazo, setTemPrazo] = useState(true);
+  const [dataVencimento, setDataVencimento] = useState(format(addDays(new Date(), 30), 'yyyy-MM-dd'));
   const [descricao, setDescricao] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numValor = parseFloat(valor);
-    if (!nome.trim() || !numValor || numValor <= 0 || !dataVencimento) return;
+    if (!nome.trim() || !numValor || numValor <= 0) return;
+    if (temPrazo && !dataVencimento) return;
 
     addMutation.mutate(
-      { nome: nome.trim(), valor: numValor, data_vencimento: dataVencimento, descricao: descricao.trim() || null },
+      { nome: nome.trim(), valor: numValor, data_vencimento: temPrazo ? dataVencimento : null, descricao: descricao.trim() || null },
       {
         onSuccess: () => {
           setNome('');
           setValor('');
           setDescricao('');
-          setDataVencimento(format(new Date(), 'yyyy-MM-dd'));
+          setTemPrazo(true);
+          setDataVencimento(format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         },
       }
     );
@@ -60,14 +64,26 @@ export default function DividaForm() {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-foreground">Data de vencimento</Label>
-          <Input
-            type="date"
-            value={dataVencimento}
-            onChange={(e) => setDataVencimento(e.target.value)}
-            required
-            className="bg-secondary border-border"
-          />
+          <div className="flex items-center justify-between">
+            <Label className="text-foreground">Prazo para cobrança</Label>
+            <div className="flex items-center gap-1.5">
+              <Switch checked={temPrazo} onCheckedChange={setTemPrazo} className="scale-90" />
+              <span className="text-[11px] text-muted-foreground">{temPrazo ? 'Definir' : 'Sem prazo'}</span>
+            </div>
+          </div>
+          {temPrazo ? (
+            <Input
+              type="date"
+              value={dataVencimento}
+              onChange={(e) => setDataVencimento(e.target.value)}
+              required
+              className="bg-secondary border-border"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground/60 h-10 flex items-center">
+              A dívida ficará sem data de vencimento
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

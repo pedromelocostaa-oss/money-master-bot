@@ -8,7 +8,7 @@ export interface Divida {
   user_id: string;
   nome: string;
   valor: number;
-  data_vencimento: string;
+  data_vencimento: string | null;
   descricao: string | null;
   pago: boolean;
   created_at: string;
@@ -17,7 +17,7 @@ export interface Divida {
 export interface DividaInsert {
   nome: string;
   valor: number;
-  data_vencimento: string;
+  data_vencimento?: string | null;
   descricao?: string | null;
   pago?: boolean;
 }

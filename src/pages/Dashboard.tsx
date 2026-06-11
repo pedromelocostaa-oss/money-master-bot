@@ -375,7 +375,7 @@ export default function Dashboard() {
       {(() => {
         const pendentes = (dividas || []).filter(d => !d.pago);
         const total = pendentes.reduce((s, d) => s + Number(d.valor), 0);
-        const vencidas = pendentes.filter(d => d.data_vencimento < new Date().toISOString().slice(0,10)).length;
+        const vencidas = pendentes.filter(d => !!d.data_vencimento && d.data_vencimento < new Date().toISOString().slice(0,10)).length;
         if (!dividas || pendentes.length === 0) return null;
         return (
           <Card
