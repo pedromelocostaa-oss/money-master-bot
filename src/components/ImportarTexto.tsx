@@ -249,8 +249,14 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
                 <TooltipTrigger asChild>
                   <Info className="w-3 h-3 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px] text-xs leading-relaxed">
-                  O mês em que esses gastos serão registrados no seu controle financeiro. O dia é preservado do texto original, mas o mês e ano são substituídos pelo valor selecionado aqui. No cartão de crédito, selecione o mês da fatura (geralmente o mês seguinte às compras).
+                <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed">
+                  É o mês em que esse gasto vai pesar no seu orçamento — geralmente o mês em que você <strong>paga</strong>, não o mês da compra.
+                  <br /><br />
+                  Ex: comprou em maio no cartão e a fatura cai em junho, paga com o salário de junho? Selecione <strong>Junho</strong>.
+                  <br /><br />
+                  No Pix/Débito o dinheiro sai na hora, então normalmente é o mesmo mês da compra. No cartão, é o mês da fatura — por isso aqui já sugerimos o mês seguinte automaticamente.
+                  <br /><br />
+                  O dia da compra é mantido, só o mês e o ano mudam para o valor selecionado.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
