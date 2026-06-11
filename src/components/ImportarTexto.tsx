@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -86,7 +87,18 @@ export default function ImportarTexto({ onClose }: ImportarTextoProps) {
         body: { texto },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        let message = error.message;
+        if (error instanceof FunctionsHttpError) {
+          try {
+            const body = await error.context.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // resposta sem corpo JSON, mantém mensagem padrão
+          }
+        }
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
 
       const items = (data.transacoes || []).map((t: ParsedTransacao) => ({
